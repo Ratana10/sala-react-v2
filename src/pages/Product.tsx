@@ -1,30 +1,19 @@
 import { columns } from "@/components/products/columns";
 import { DataTable } from "@/components/products/data-table";
-import { Button } from "@/components/ui/button";
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { fetchProduct } from "@/services/product";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 
 const Product = () => {
-  const [products, setProducts] = useState([]);
+  const query = useQuery({ queryKey: ["product"], queryFn: fetchProduct });
 
-
-  useEffect(() => {
-
-    const fetchProduct = async () => {
-      const res = await fetch("https://api.escuelajs.co/api/v1/products");
-
-      const data = await res.json();
-
-      console.log("Fetched data", data);
-      setProducts(data);
-      return data;
-    };
-
-    fetchProduct();
-  }, []);
+  console.log("query", query.data);
+  // useEffect(() => {
+  //   fetchProduct();
+  // }, []);
   return (
     <div>
-      <DataTable columns={columns} data={products} />
+      <DataTable columns={columns} data={query.data ?? []} />
     </div>
   );
 };

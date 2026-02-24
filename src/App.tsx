@@ -6,21 +6,29 @@ import Product from "./pages/Product";
 import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import User from "./pages/User";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+
+const queryClient = new QueryClient();
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />}></Route>
-        </Route>
+    <QueryClientProvider client={queryClient}>
+      <ReactQueryDevtools initialIsOpen={false} />
 
-        <Route element={<DashboardLayout />}>
-          <Route path="/products" element={<Product />}></Route>
-          <Route path="/users" element={<User />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
+      <BrowserRouter>
+        <Routes>
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Home />}></Route>
+          </Route>
+
+          <Route element={<DashboardLayout />}>
+            <Route path="/products" element={<Product />}></Route>
+            <Route path="/users" element={<User />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }
 
