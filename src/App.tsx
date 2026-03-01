@@ -6,6 +6,8 @@ import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import User from "./pages/User";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import AuthLayout from "./layouts/AuthLayout";
+import Auth from "./pages/Auth";
 
 const queryClient = new QueryClient();
 
@@ -16,6 +18,9 @@ function App() {
         <Routes>
           <Route element={<MainLayout />}>
             <Route path="/" element={<Home />}></Route>
+          </Route>
+            <Route element={<AuthLayout />}>
+            <Route path="/login" element={<Auth />}></Route>
           </Route>
 
           <Route element={<DashboardLayout />}>

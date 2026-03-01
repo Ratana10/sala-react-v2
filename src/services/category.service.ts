@@ -1,9 +1,8 @@
+import type { CategoryResponse } from "@/types/category";
+import { api } from "./api";
+
 export const getCategories = async () => {
-  const res = await fetch(`http://localhost:3000/api/v1/categories`);
+  const { data } = await api.get<CategoryResponse>("/api/v1/categories");
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch categories");
-  }
-
-  return res.json();
+  return data;
 };
