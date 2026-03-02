@@ -1,5 +1,6 @@
 import { columns } from "@/components/products/columns";
 import { DataTable } from "@/components/products/data-table";
+import ProductForm from "@/components/products/ProductForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
@@ -10,8 +11,12 @@ import { useState } from "react";
 const Product = () => {
   const [searchInput, setSearchInput] = useState("");
 
+  const [search, setSearch] = useState("")
+  
+  const [open, setOpen] = useState(false)
+  
   const query = useQuery({
-    queryKey: ["products"],
+    queryKey: ["products", search],
     queryFn: () => fetchProduct(searchInput),
   });
 
@@ -25,6 +30,7 @@ const Product = () => {
 
   const handleSearch = () => {
     console.log("search input", searchInput);
+    setSearch(searchInput)
   };
 
   return (
@@ -33,9 +39,14 @@ const Product = () => {
         <Input
           className="w-[200px]"
           onChange={(e) => setSearchInput(e.target.value)}
+          value={searchInput}
         />
         <Button onClick={() => handleSearch()}>Search</Button>
       </div>
+
+      <Button onClick={()=> setOpen(true)}>Create Product</Button>
+
+      <ProductForm open={open} setOpen={setOpen} />
 
       <DataTable columns={columns} data={query.data.data ?? []} />
     </div>
