@@ -6,15 +6,16 @@ import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
 import { fetchProduct } from "@/services/product.service";
 import { useQuery } from "@tanstack/react-query";
+import { CirclePlus } from "lucide-react";
 import { useState } from "react";
 
 const Product = () => {
   const [searchInput, setSearchInput] = useState("");
 
-  const [search, setSearch] = useState("")
-  
-  const [open, setOpen] = useState(false)
-  
+  const [search, setSearch] = useState("");
+
+  const [open, setOpen] = useState(false);
+
   const query = useQuery({
     queryKey: ["products", search],
     queryFn: () => fetchProduct(searchInput),
@@ -30,21 +31,25 @@ const Product = () => {
 
   const handleSearch = () => {
     console.log("search input", searchInput);
-    setSearch(searchInput)
+    setSearch(searchInput);
   };
 
   return (
     <div>
-      <div className="flex gap-2 mb-4">
-        <Input
-          className="w-[200px]"
-          onChange={(e) => setSearchInput(e.target.value)}
-          value={searchInput}
-        />
-        <Button onClick={() => handleSearch()}>Search</Button>
-      </div>
+      <div className="flex justify-between">
+        <div className="flex gap-2 mb-4">
+          <Input
+            className="w-[200px]"
+            onChange={(e) => setSearchInput(e.target.value)}
+            value={searchInput}
+          />
+          <Button onClick={() => handleSearch()}>Search</Button>
+        </div>
 
-      <Button onClick={()=> setOpen(true)}>Create Product</Button>
+        <Button onClick={() => setOpen(true)}>
+          <CirclePlus /> Create
+        </Button>
+      </div>
 
       <ProductForm open={open} setOpen={setOpen} />
 

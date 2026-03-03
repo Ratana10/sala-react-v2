@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import React from "react";
+import React, { useState } from "react";
 import z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,8 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useCategories } from "@/hooks/useCategories";
+import { useCreateProduct } from "@/hooks/useProduct";
+import { Spinner } from "../ui/spinner";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -46,8 +48,13 @@ interface Props {
 }
 
 const ProductForm = ({ open, setOpen }: Props) => {
-  const { data, isLoading } = useCategories();
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { data } = useCategories();
   console.log("Data category", data);
+
+  const { mutate: createProductMutate } = useCreateProduct();
+
   const form = useForm({
     defaultValues: {
       name: "",
@@ -60,11 +67,25 @@ const ProductForm = ({ open, setOpen }: Props) => {
     },
     onSubmit: async ({ value }) => {
       console.log("value", value);
+      setIsLoading(true)
+
+      createProductMutate(value, {
+        onSuccess: () => {
+          setOpen(false);
+          form.reset()
+        },
+        onSettled: ()=> {
+          setIsLoading(false)
+        }
+      });
     },
   });
 
   return (
     <div>
+      {isLoading && <Spinner />}
+    
+
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
@@ -72,7 +93,7 @@ const ProductForm = ({ open, setOpen }: Props) => {
             <DialogDescription>Product Information Detail</DialogDescription>
           </DialogHeader>
           <form
-            id="bug-report-form"
+            id="product-form"
             onSubmit={(e) => {
               e.preventDefault();
               form.handleSubmit();
@@ -118,6 +139,7 @@ const ProductForm = ({ open, setOpen }: Props) => {
                         name={field.name}
                         value={field.state.value}
                         onBlur={field.handleBlur}
+                        type={"number"}
                         onChange={(e) =>
                           field.handleChange(e.target.valueAsNumber)
                         }
@@ -145,6 +167,7 @@ const ProductForm = ({ open, setOpen }: Props) => {
                         name={field.name}
                         value={field.state.value}
                         onBlur={field.handleBlur}
+                        type={"number"}
                         onChange={(e) =>
                           field.handleChange(e.target.valueAsNumber)
                         }
@@ -185,11 +208,11 @@ const ProductForm = ({ open, setOpen }: Props) => {
                           aria-invalid={isInvalid}
                           className="min-w-[120px]"
                         >
-                          <SelectValue placeholder="Select" />
+                          <SelectValue placeholder="Select the category" />
                         </SelectTrigger>
                         <SelectContent position="item-aligned">
-                          {data.data.map((category) => (
-                            <SelectItem value={category.id}>
+                          {data.data.map((category, index) => (
+                            <SelectItem key={index} value={String(category.id)}>
                               {category.name}
                             </SelectItem>
                           ))}
