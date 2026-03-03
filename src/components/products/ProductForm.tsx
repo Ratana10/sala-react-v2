@@ -1,4 +1,5 @@
 "use client";
+import { useState, useRef } from "react";
 import { useForm } from "@tanstack/react-form";
 import * as z from "zod";
 
@@ -29,7 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { useCategories } from "@/hooks/useCategories";
 import type { ICategory } from "@/types/category";
-import { useCreateProduct } from "@/hooks/useProduct";
+import { useCreateProduct, useUploadProduct } from "@/hooks/useProduct";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -51,6 +52,12 @@ export function ProductForm({ open, setOpen }: Props) {
   const categories = data?.data ?? [];
 
   const { mutate: createProduct, isPending } = useCreateProduct();
+  const { mutate: uploadProductImage, isPending: isUploading } =
+    useUploadProduct();
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm({
     defaultValues: {
@@ -65,13 +72,47 @@ export function ProductForm({ open, setOpen }: Props) {
     onSubmit: async ({ value }) => {
       console.log("value", value);
       createProduct(value, {
-        onSuccess: () => {
-          setOpen(false);
-          form.reset();
+        onSuccess: (data) => {
+          const productId = data.id ?? data.data?.id;
+          if (productId && selectedFile) {
+            uploadProductImage(
+              { productId, file: selectedFile },
+              {
+                onSuccess: () => {
+                  setOpen(false);
+                  form.reset();
+                  setSelectedFile(null);
+                  setPreviewUrl(null);
+                },
+              }
+            );
+          } else {
+            setOpen(false);
+            form.reset();
+            setSelectedFile(null);
+            setPreviewUrl(null);
+          }
         },
       });
     },
   });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      const url = URL.createObjectURL(file);
+      setPreviewUrl(url);
+    }
+  };
+
+  const handleRemoveFile = () => {
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -206,15 +247,56 @@ export function ProductForm({ open, setOpen }: Props) {
                 );
               }}
             />
+            <Field>
+              <FieldLabel htmlFor="image">Image</FieldLabel>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="image"
+                  name="image"
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  disabled={isPending || isUploading}
+                />
+                {selectedFile && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleRemoveFile}
+                    disabled={isPending || isUploading}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+              {previewUrl && (
+                <div className="mt-2">
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="h-24 w-24 object-cover rounded-md"
+                  />
+                </div>
+              )}
+            </Field>
           </FieldGroup>
         </form>
         <DialogFooter>
           <Field orientation="horizontal" className="flex justify-end">
             <DialogClose asChild>
-              <Button variant="outline">Cancel</Button>
+              <Button variant="outline" disabled={isPending || isUploading}>
+                Cancel
+              </Button>
             </DialogClose>
-            <Button className="bg-blue-500" type="submit" form="product-form">
-              Save
+            <Button
+              className="bg-blue-500"
+              type="submit"
+              form="product-form"
+              disabled={isPending || isUploading}
+            >
+              {isPending || isUploading ? "Saving..." : "Save"}
             </Button>
           </Field>
         </DialogFooter>
