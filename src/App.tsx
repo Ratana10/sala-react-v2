@@ -6,6 +6,7 @@ import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import User from "./pages/User";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import Category from "./pages/Category";
 
 const queryClient = new QueryClient();
 
@@ -19,8 +20,9 @@ function App() {
           </Route>
 
           <Route element={<DashboardLayout />}>
-            <Route path="/products" element={<Product />}></Route>
+            <Route path="/products" element={<Product />} />
             <Route path="/users" element={<User />} />
+            <Route path="/categories" element={<Category />} />
           </Route>
         </Routes>
       </BrowserRouter>

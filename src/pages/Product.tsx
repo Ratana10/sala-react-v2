@@ -1,5 +1,5 @@
 import { columns } from "@/components/products/columns";
-import { DataTable } from "@/components/products/data-table";
+import { DataTable } from "@/components/data-table";
 import ProductForm from "@/components/products/ProductForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
