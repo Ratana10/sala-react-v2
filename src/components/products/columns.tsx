@@ -52,7 +52,7 @@ export const columns: ColumnDef<Product>[] = [
     header: "Category",
     cell: ({ row }) => (
       <div>
-        <Badge className="bg-blue-500">{row.original.category.name}</Badge>
+        <Badge className="bg-blue-500">{row.original.category?.name}</Badge>
       </div>
     ),
   },

@@ -7,6 +7,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import User from "./pages/User";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Category from "./pages/Category";
+import { Toaster } from "./components/ui/sonner";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
+       <Toaster />
     </QueryClientProvider>
   );
 }

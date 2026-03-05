@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
+import { format } from "date-fns";
 
 export interface Category {
   id: number;
@@ -29,7 +30,7 @@ export const columns: ColumnDef<Category>[] = [
   },
   {
     header: "Created At",
-    cell: ({ row }) => <div>{row.original.createdAt}</div>,
+    cell: ({ row }) => <div>{format(row.original.createdAt, "yyyy-MM-dd hh:mm a")}</div>,
   },
   {
     id: "actions",

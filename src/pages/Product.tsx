@@ -4,7 +4,7 @@ import ProductForm from "@/components/products/ProductForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { fetchProduct } from "@/services/product.service";
+import {fetchProduct} from "@/services/product.service"
 import { useQuery } from "@tanstack/react-query";
 import { CirclePlus } from "lucide-react";
 import { useState } from "react";
