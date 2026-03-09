@@ -1,13 +1,10 @@
 "use client";
-
 import * as React from "react";
 import { useForm } from "@tanstack/react-form";
-import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -21,48 +18,71 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { useCreateCategory } from "@/hooks/useCategories";
-import { toast } from "sonner"
-
-const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-});
+import { useCreateCategory, useUpdateCategory } from "@/hooks/useCategories";
+import { toast } from "sonner";
+import type { ICategory } from "@/types/category";
+import { CategorySchema } from "@/schemas/category";
 
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
+  category?: ICategory;
 }
 
-export function CategoryForm({ open, setOpen }: Props) {
+export function CategoryForm({ open, setOpen, category }: Props) {
   const { mutate: createCategoryMutate } = useCreateCategory();
+  const { mutate: updateCategoryMutate } = useUpdateCategory();
   const form = useForm({
     defaultValues: {
-      name: "",
+      name: category?.name ?? "",
     },
     validators: {
-      onSubmit: formSchema,
+      onSubmit: CategorySchema,
     },
     onSubmit: async ({ value }) => {
-      console.log("value", value);
+      if (category?.id) {
+        updateCategoryMutate(
+          { id: category.id, request: value },
+          {
+            onSuccess: () => {
+              toast.success("Category updated successfully");
+              setOpen(false);
+              form.reset();
+            },
+          },
+        );
+        return;
+      }
       createCategoryMutate(value, {
         onSuccess: () => {
-          toast.success("Category created successfully")
-          setOpen(false)
-          form.reset()
-        }
-      })
+          toast.success("Category created successfully");
+          setOpen(false);
+          form.reset();
+        },
+      });
     },
   });
+
+  React.useEffect(() => {
+    if (category) {
+      form.setFieldValue("name", category.name);
+    } else {
+      form.reset();
+    }
+  }, [category]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Edit profile</DialogTitle>
+          <DialogTitle>
+            {category ? "Edit Category" : "Create Category"}
+          </DialogTitle>
           <DialogDescription>
-            Make changes to your profile here. Click save when you&apos;re done.
+            {category
+              ? "Update the category details below."
+              : "Enter the details for the new category."}
           </DialogDescription>
         </DialogHeader>
         <form
@@ -104,7 +124,9 @@ export function CategoryForm({ open, setOpen }: Props) {
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button type="submit" form="category-form">Save changes</Button>
+          <Button type="submit" form="category-form">
+            {category ? "Update" : "Create"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

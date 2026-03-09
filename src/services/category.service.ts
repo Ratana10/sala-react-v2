@@ -1,3 +1,5 @@
+import type { CategoryType } from "@/schemas/category";
+
 export const getCategories = async () => {
   const res = await fetch(`http://localhost:3000/api/v1/categories`);
 
@@ -7,17 +9,31 @@ export const getCategories = async () => {
   return data;
 };
 
-export const createCategory = async (request: any) => {
+export const createCategory = async (request: CategoryType) => {
   const res = await fetch(`http://localhost:3000/api/v1/categories`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(request)
+    body: JSON.stringify(request),
   });
 
   const data = await res.json();
 
   console.log("Fetched data", data);
+  return data;
+};
+
+export const updateCategory = async (id: number, request: CategoryType) => {
+  const res = await fetch(`http://localhost:3000/api/v1/categories/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(request),
+  });
+
+  const data = await res.json();
+
   return data;
 };

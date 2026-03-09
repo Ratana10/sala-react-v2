@@ -19,7 +19,11 @@ export interface Category {
   createdAt: string;
 }
 
-export const columns: ColumnDef<Category>[] = [
+interface ColumnsProps {
+  onEdit: (category: Category) => void;
+}
+
+export const columns = ({ onEdit }: ColumnsProps): ColumnDef<Category>[] => [
   {
     accessorKey: "id",
     header: "ID",
@@ -30,12 +34,13 @@ export const columns: ColumnDef<Category>[] = [
   },
   {
     header: "Created At",
-    cell: ({ row }) => <div>{format(row.original.createdAt, "yyyy-MM-dd hh:mm a")}</div>,
+    cell: ({ row }) => (
+      <div>{format(row.original.createdAt, "yyyy-MM-dd hh:mm a")}</div>
+    ),
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      console.log('row', row)
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -48,7 +53,7 @@ export const columns: ColumnDef<Category>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <SquarePen /> Edit
             </DropdownMenuItem>
             <DropdownMenuItem className="text-red-500">
