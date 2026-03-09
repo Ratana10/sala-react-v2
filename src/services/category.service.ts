@@ -21,3 +21,16 @@ export const createCategory = async (request: any) => {
   console.log("Fetched data", data);
   return data;
 };
+
+export const updateCategory = async (id: number, request: any) => {
+  const res = await fetch(`http://localhost:3000/api/v1/categories/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+  const data = await res.json();
+  return data;
+};

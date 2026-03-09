@@ -12,14 +12,15 @@ import {
 import { Button } from "../ui/button";
 import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import type { ICategory } from "@/types/category";
 
-export interface Category {
-  id: number;
-  name: string;
-  createdAt: string;
+
+
+interface Props {
+  onEdit: (category: ICategory) => void;
 }
 
-export const columns: ColumnDef<Category>[] = [
+export const columns = ({ onEdit }: Props): ColumnDef<ICategory>[] => [
   {
     accessorKey: "id",
     header: "ID",
@@ -30,12 +31,14 @@ export const columns: ColumnDef<Category>[] = [
   },
   {
     header: "Created At",
-    cell: ({ row }) => <div>{format(row.original.createdAt, "yyyy-MM-dd hh:mm a")}</div>,
+    cell: ({ row }) => (
+      <div>{format(row.original.createdAt, "yyyy-MM-dd hh:mm a")}</div>
+    ),
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      console.log('row', row)
+      console.log("row", row);
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -48,7 +51,7 @@ export const columns: ColumnDef<Category>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <SquarePen /> Edit
             </DropdownMenuItem>
             <DropdownMenuItem className="text-red-500">

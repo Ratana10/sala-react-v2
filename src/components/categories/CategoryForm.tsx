@@ -1,6 +1,5 @@
 "use client";
 
-import * as React from "react";
 import { useForm } from "@tanstack/react-form";
 import * as z from "zod";
 
@@ -23,8 +22,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { useCreateCategory } from "@/hooks/useCategories";
-import { toast } from "sonner"
+import { useCreateCategory, useUpdateCategory } from "@/hooks/useCategories";
+import { toast } from "sonner";
+import type { ICategory } from "@/types/category";
+import { useEffect } from "react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -33,28 +34,53 @@ const formSchema = z.object({
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
+  category?: ICategory;
 }
 
-export function CategoryForm({ open, setOpen }: Props) {
+export function CategoryForm({ open, setOpen, category }: Props) {
+  console.log("passed category", category);
   const { mutate: createCategoryMutate } = useCreateCategory();
+  const { mutate: updateCategoryMutate } = useUpdateCategory();
+
   const form = useForm({
     defaultValues: {
-      name: "",
+      name: category?.name || "",
+      // name: category ? category.name : ""
     },
     validators: {
       onSubmit: formSchema,
     },
     onSubmit: async ({ value }) => {
       console.log("value", value);
-      createCategoryMutate(value, {
-        onSuccess: () => {
-          toast.success("Category created successfully")
-          setOpen(false)
-          form.reset()
-        }
-      })
+
+      if (category) {
+        updateCategoryMutate(
+          { id: category.id, request: value },
+          {
+            onSuccess: () => {
+              toast.success("Category updated successfully");
+              setOpen(false);
+              form.reset();
+            },
+          },
+        );
+      } else {
+        createCategoryMutate(value, {
+          onSuccess: () => {
+            toast.success("Category created successfully");
+            setOpen(false);
+            form.reset();
+          },
+        });
+      }
     },
   });
+
+  useEffect(() => {
+    if (!category) {
+      form.reset();
+    } 
+  }, [category]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -104,7 +130,9 @@ export function CategoryForm({ open, setOpen }: Props) {
           <DialogClose asChild>
             <Button variant="outline">Cancel</Button>
           </DialogClose>
-          <Button type="submit" form="category-form">Save changes</Button>
+          <Button type="submit" form="category-form">
+            Save changes
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
