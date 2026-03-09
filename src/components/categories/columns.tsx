@@ -21,9 +21,13 @@ export interface Category {
 
 interface ColumnsProps {
   onEdit: (category: Category) => void;
+  onDelete: (category: Category) => void;
 }
 
-export const columns = ({ onEdit }: ColumnsProps): ColumnDef<Category>[] => [
+export const columns = ({
+  onEdit,
+  onDelete,
+}: ColumnsProps): ColumnDef<Category>[] => [
   {
     accessorKey: "id",
     header: "ID",
@@ -56,7 +60,10 @@ export const columns = ({ onEdit }: ColumnsProps): ColumnDef<Category>[] => [
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <SquarePen /> Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-500">
+            <DropdownMenuItem
+              className="text-red-500"
+              onClick={() => onDelete(row.original)}
+            >
               <Trash2 className="text-red-500" />
               Delete
             </DropdownMenuItem>

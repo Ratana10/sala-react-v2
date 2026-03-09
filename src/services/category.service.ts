@@ -37,3 +37,16 @@ export const updateCategory = async (id: number, request: CategoryType) => {
 
   return data;
 };
+
+export const deleteCategory = async (id: number) => {
+  const res = await fetch(`http://localhost:3000/api/v1/categories/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  const data = await res.json();
+
+  return data;
+};
