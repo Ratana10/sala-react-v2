@@ -1,5 +1,6 @@
 import {
   createCategory,
+  deleteCategory,
   getCategories,
   updateCategory,
 } from "@/services/category.service";
@@ -27,6 +28,17 @@ export const useUpdateCategory = () => {
   return useMutation({
     mutationFn: ({ id, request }: { id: number; request: any }) =>
       updateCategory(id, request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
+};
+
+export const useDeleteCategory = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id?: number; }) =>
+      deleteCategory(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     },

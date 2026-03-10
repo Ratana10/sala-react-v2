@@ -14,13 +14,15 @@ import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import type { ICategory } from "@/types/category";
 
-
-
 interface Props {
   onEdit: (category: ICategory) => void;
+  onDelete: (category: ICategory) => void;
 }
 
-export const columns = ({ onEdit }: Props): ColumnDef<ICategory>[] => [
+export const columns = ({
+  onEdit,
+  onDelete,
+}: Props): ColumnDef<ICategory>[] => [
   {
     accessorKey: "id",
     header: "ID",
@@ -54,7 +56,10 @@ export const columns = ({ onEdit }: Props): ColumnDef<ICategory>[] => [
             <DropdownMenuItem onClick={() => onEdit(row.original)}>
               <SquarePen /> Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-500">
+            <DropdownMenuItem
+              className="text-red-500"
+              onClick={() => onDelete(row.original)}
+            >
               <Trash2 className="text-red-500" />
               Delete
             </DropdownMenuItem>
