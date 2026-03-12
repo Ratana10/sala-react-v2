@@ -6,7 +6,6 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -20,7 +19,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { useCreateCategory, useUpdateCategory } from "@/hooks/useCategories";
 import { toast } from "sonner";
@@ -38,21 +36,17 @@ interface Props {
 }
 
 export function CategoryForm({ open, setOpen, category }: Props) {
-  console.log("passed category", category);
   const { mutate: createCategoryMutate } = useCreateCategory();
   const { mutate: updateCategoryMutate } = useUpdateCategory();
 
   const form = useForm({
     defaultValues: {
       name: category?.name || "",
-      // name: category ? category.name : ""
     },
     validators: {
       onSubmit: formSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log("value", value);
-
       if (category) {
         updateCategoryMutate(
           { id: category.id, request: value },
@@ -79,16 +73,16 @@ export function CategoryForm({ open, setOpen, category }: Props) {
   useEffect(() => {
     if (!category) {
       form.reset();
-    } 
+    }
   }, [category]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
-          <DialogTitle>Edit profile</DialogTitle>
+          <DialogTitle>{category ? "Edit" : "Create"} category</DialogTitle>
           <DialogDescription>
-            Make changes to your profile here. Click save when you&apos;re done.
+            Enter category information detail
           </DialogDescription>
         </DialogHeader>
         <form
@@ -131,66 +125,10 @@ export function CategoryForm({ open, setOpen, category }: Props) {
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           <Button type="submit" form="category-form">
-            Save changes
+            {category ? "Update" : "Create"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    // <Card className="w-full sm:max-w-md">
-    //   <CardHeader>
-    //     <CardTitle>Category</CardTitle>
-    //     <CardDescription>
-    //       Category information detail
-    //     </CardDescription>
-    //   </CardHeader>
-    //   <CardContent>
-    //     <form
-    //       id="bug-report-form"
-    //       onSubmit={(e) => {
-    //         e.preventDefault()
-    //         form.handleSubmit()
-    //       }}
-    //     >
-    //       <FieldGroup>
-    //         <form.Field
-    //           name="name"
-    //           children={(field) => {
-    //             const isInvalid =
-    //               field.state.meta.isTouched && !field.state.meta.isValid
-    //             return (
-    //               <Field data-invalid={isInvalid}>
-    //                 <FieldLabel htmlFor={field.name}>Category Name</FieldLabel>
-    //                 <Input
-    //                   id={field.name}
-    //                   name={field.name}
-    //                   value={field.state.value}
-    //                   onBlur={field.handleBlur}
-    //                   onChange={(e) => field.handleChange(e.target.value)}
-    //                   aria-invalid={isInvalid}
-    //                   placeholder="Enter category name"
-    //                   autoComplete="off"
-    //                 />
-    //                 {isInvalid && (
-    //                   <FieldError errors={field.state.meta.errors} />
-    //                 )}
-    //               </Field>
-    //             )
-    //           }}
-    //         />
-
-    //       </FieldGroup>
-    //     </form>
-    //   </CardContent>
-    //   <CardFooter>
-    //     <Field orientation="horizontal">
-    //       <Button type="button" variant="outline" onClick={() => form.reset()}>
-    //         Reset
-    //       </Button>
-    //       <Button type="submit" form="bug-report-form">
-    //         Submit
-    //       </Button>
-    //     </Field>
-    //   </CardFooter>
-    // </Card>
   );
 }

@@ -1,6 +1,5 @@
 import "./App.css";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Home from "./pages/Home";
 import Product from "./pages/Product";
 import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -8,6 +7,7 @@ import User from "./pages/User";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Category from "./pages/Category";
 import { Toaster } from "./components/ui/sonner";
+import LoginPage from "./pages/LoginPage";
 
 const queryClient = new QueryClient();
 
@@ -17,7 +17,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />}></Route>
+            <Route path="/login" element={<LoginPage />} />
           </Route>
 
           <Route element={<DashboardLayout />}>
@@ -27,7 +27,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-       <Toaster />
+      <Toaster />
     </QueryClientProvider>
   );
 }

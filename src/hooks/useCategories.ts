@@ -6,10 +6,10 @@ import {
 } from "@/services/category.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
-export const useCategories = () => {
+export const useCategories = (search?: string) => {
   return useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
+    queryKey: ["categories", search],
+    queryFn: () => getCategories(search),
   });
 };
 
@@ -37,13 +37,11 @@ export const useUpdateCategory = () => {
 export const useDeleteCategory = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id }: { id?: number; }) =>
-      deleteCategory(id),
+    mutationFn: ({ id }: { id?: number }) => deleteCategory(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
     },
   });
 };
-
 
 /// test

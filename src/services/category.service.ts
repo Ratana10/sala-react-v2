@@ -1,5 +1,5 @@
-export const getCategories = async () => {
-  const res = await fetch(`http://localhost:3000/api/v1/categories`);
+export const getCategories = async (search?: string) => {
+  const res = await fetch(`http://localhost:3000/api/v1/categories?search=${search}`);
 
   const data = await res.json();
 

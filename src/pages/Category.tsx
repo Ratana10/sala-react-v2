@@ -3,18 +3,26 @@ import { columns } from "@/components/categories/columns";
 import ConfirmDelete from "@/components/categories/ConfirmDelete";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCategories, useDeleteCategory } from "@/hooks/useCategories";
 import type { ICategory } from "@/types/category";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { useDebounce } from 'use-debounce';
 
 const Category = () => {
-  const { data, isLoading } = useCategories();
-
+  
   const { mutate: deleteCategoryMutate } = useDeleteCategory();
-
+  
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  
+  
+  const [value] = useDebounce(searchInput, 500) // 0.5s
+  
+  const { data, isLoading } = useCategories(value);
+  console.log('value', value)
 
   const [category, setCategory] = useState<ICategory | undefined>(undefined);
 
@@ -46,7 +54,16 @@ const Category = () => {
 
   return (
     <div>
-      <Button onClick={() => setIsOpen(true)}>Create</Button>
+      <div className="flex justify-between gap-5 mb-4">
+        <Input
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="w-[400px]"
+          placeholder="Search by name"
+        />
+        <Button onClick={() => setIsOpen(true)}>Create</Button>
+      </div>
+
       <DataTable
         columns={columns({ onEdit, onDelete })}
         data={data?.data ?? []}
