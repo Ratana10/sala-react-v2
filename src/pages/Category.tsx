@@ -3,18 +3,23 @@ import { columns } from "@/components/categories/columns";
 import ConfirmDelete from "@/components/categories/ConfirmDelete";
 import { DataTable } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useCategories, useDeleteCategory } from "@/hooks/useCategories";
 import type { ICategory } from "@/types/category";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-
+import { useDebounce } from "use-debounce";
 const Category = () => {
-  const { data, isLoading } = useCategories();
-
   const { mutate: deleteCategoryMutate } = useDeleteCategory();
 
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
+  
+  const [searchInput, setSearchInput] = useState("");
+
+  const [debouncedSearch] = useDebounce(searchInput, 500);
+
+  const { data, isLoading } = useCategories(debouncedSearch);
 
   const [category, setCategory] = useState<ICategory | undefined>(undefined);
 
@@ -46,6 +51,12 @@ const Category = () => {
 
   return (
     <div>
+      <Input
+        className="w-[200px]"
+        onChange={(e) => setSearchInput(e.target.value)}
+        value={searchInput}
+      />
+
       <Button onClick={() => setIsOpen(true)}>Create</Button>
       <DataTable
         columns={columns({ onEdit, onDelete })}
