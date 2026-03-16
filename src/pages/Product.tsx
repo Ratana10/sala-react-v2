@@ -4,22 +4,51 @@ import ProductForm from "@/components/products/ProductForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import {fetchProduct} from "@/services/product.service"
+import { fetchProduct } from "@/services/product.service";
 import { useQuery } from "@tanstack/react-query";
 import { CirclePlus } from "lucide-react";
 import { useState } from "react";
+import type { IProduct } from "@/types/product";
 
 const Product = () => {
   const [searchInput, setSearchInput] = useState("");
-
   const [search, setSearch] = useState("");
-
   const [open, setOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null);
 
   const query = useQuery({
     queryKey: ["products", search],
     queryFn: () => fetchProduct(searchInput),
   });
+
+
+  // const columns = useMemo(
+  //   () =>
+  //     getColumns({
+  //       onEdit: (product) => {
+  //         setSelectedProduct(product);
+  //         setOpen(true);
+  //       },
+  //     }),
+  //   []
+  // );
+
+  const handleOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      setSelectedProduct(null);
+    }
+  };
+
+  const handleCreate = () => {
+    setSelectedProduct(null);
+    setOpen(true);
+  };
+
+  const onEdit = (product: IProduct) => {
+    setSelectedProduct(product);
+    setOpen(true);
+  };
 
   if (query.isLoading) {
     return (
@@ -30,7 +59,6 @@ const Product = () => {
   }
 
   const handleSearch = () => {
-    console.log("search input", searchInput);
     setSearch(searchInput);
   };
 
@@ -46,14 +74,18 @@ const Product = () => {
           <Button onClick={() => handleSearch()}>Search</Button>
         </div>
 
-        <Button onClick={() => setOpen(true)}>
+        <Button onClick={handleCreate}>
           <CirclePlus /> Create
         </Button>
       </div>
 
-      <ProductForm open={open} setOpen={setOpen} />
+      <ProductForm
+        open={open}
+        setOpen={handleOpenChange}
+        product={selectedProduct}
+      />
 
-      <DataTable columns={columns} data={query.data.data ?? []} />
+      <DataTable columns={columns({ onEdit })} data={query.data.data ?? []} />
     </div>
   );
 };

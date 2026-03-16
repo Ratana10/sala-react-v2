@@ -1,12 +1,11 @@
 import { useForm } from "@tanstack/react-form";
-import React, { useState } from "react";
+import { useEffect, useState } from "react";
 import z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldContent,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -20,7 +19,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -29,14 +27,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { useCategories } from "@/hooks/useCategories";
-import { useCreateProduct } from "@/hooks/useProduct";
+import { useCategoryList } from "@/hooks/useCategories";
+import { useCreateProduct, useUpdateProduct } from "@/hooks/useProduct";
 import { Spinner } from "../ui/spinner";
+import type { IProduct } from "@/types/product";
+import type { ProductPayload } from "@/services/product.service";
+import type { ICategory } from "@/types/category";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  price: z.number().optional(),
-  categoryId: z.number().optional(),
+  price: z.number().min(0, "Price must be 0 or more"),
+  categoryId: z
+    .union([z.number().min(1, "Category is required"), z.undefined()])
+    .refine((val) => val !== undefined, {
+      message: "Category is required",
+    }),
   qty: z.number().int().min(0, "Quantity must be 0 or more"),
 });
 
@@ -45,51 +50,75 @@ export type ProductSchema = z.infer<typeof productSchema>;
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
+  product?: IProduct | null;
 }
 
-const ProductForm = ({ open, setOpen }: Props) => {
+const ProductForm = ({ open, setOpen, product }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
+  const isEditMode = !!product;
 
-  const { data } = useCategories();
-  console.log("Data category", data);
+  const { data } = useCategoryList();
 
   const { mutate: createProductMutate } = useCreateProduct();
+  const { mutate: updateProductMutate } = useUpdateProduct();
 
   const form = useForm({
     defaultValues: {
-      name: "",
-      price: 0,
-      categoryId: 0,
-      qty: 0,
+      name: product?.name ?? "",
+      price: product?.price ? Number(product.price) : 0,
+      categoryId: product?.categoryId ?? undefined,
+      qty: product?.qty ? Number(product.qty) : 0,
     },
     validators: {
       onSubmit: productSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log("value", value);
-      setIsLoading(true)
+      setIsLoading(true);
+      const payload = value as ProductPayload;
 
-      createProductMutate(value, {
-        onSuccess: () => {
-          setOpen(false);
-          form.reset()
-        },
-        onSettled: ()=> {
-          setIsLoading(false)
-        }
-      });
+      if (isEditMode && product) {
+        updateProductMutate(
+          { id: product.id, request: payload },
+          {
+            onSuccess: () => {
+              setOpen(false);
+              form.reset();
+            },
+            onSettled: () => {
+              setIsLoading(false);
+            },
+          },
+        );
+      } else {
+        createProductMutate(payload, {
+          onSuccess: () => {
+            setOpen(false);
+            form.reset();
+          },
+          onSettled: () => {
+            setIsLoading(false);
+          },
+        });
+      }
     },
   });
+
+  useEffect(() => {
+    if (!product) {
+      form.reset();
+    }
+  }, [product]);
 
   return (
     <div>
       {isLoading && <Spinner />}
-    
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Product Form</DialogTitle>
+            <DialogTitle>
+              {isEditMode ? "Edit Product" : "Create Product"}
+            </DialogTitle>
             <DialogDescription>Product Information Detail</DialogDescription>
           </DialogHeader>
           <form
@@ -141,7 +170,7 @@ const ProductForm = ({ open, setOpen }: Props) => {
                         onBlur={field.handleBlur}
                         type={"number"}
                         onChange={(e) =>
-                          field.handleChange(e.target.valueAsNumber)
+                          field.handleChange(e.target.valueAsNumber || 0)
                         }
                         aria-invalid={isInvalid}
                         placeholder="Enter price"
@@ -169,7 +198,7 @@ const ProductForm = ({ open, setOpen }: Props) => {
                         onBlur={field.handleBlur}
                         type={"number"}
                         onChange={(e) =>
-                          field.handleChange(e.target.valueAsNumber)
+                          field.handleChange(e.target.valueAsNumber || 0)
                         }
                         aria-invalid={isInvalid}
                         placeholder="Enter quantity"
@@ -200,7 +229,9 @@ const ProductForm = ({ open, setOpen }: Props) => {
                       </FieldContent>
                       <Select
                         name={field.name}
-                        value={String(field.state.value)}
+                        value={
+                          field.state.value ? String(field.state.value) : ""
+                        }
                         onValueChange={(val) => field.handleChange(Number(val))}
                       >
                         <SelectTrigger
@@ -211,7 +242,7 @@ const ProductForm = ({ open, setOpen }: Props) => {
                           <SelectValue placeholder="Select the category" />
                         </SelectTrigger>
                         <SelectContent position="item-aligned">
-                          {data.data.map((category, index) => (
+                          {data.data.map((category: ICategory, index: number) => (
                             <SelectItem key={index} value={String(category.id)}>
                               {category.name}
                             </SelectItem>

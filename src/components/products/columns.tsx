@@ -12,21 +12,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { MoreHorizontal, SquarePen, Trash2 } from "lucide-react";
+import type { IProduct } from "@/types/product";
 
-export interface Product {
-  id: number;
-  name: string;
-  price: number;
-  qty: string;
-  categoryId: number;
-  isActive: boolean;
-  category: {
-    id: number;
-    name: string;
-  };
+interface ColumnActions {
+  onEdit?: (product: IProduct) => void;
+  onDelete?: (product: IProduct) => void;
 }
 
-export const columns: ColumnDef<Product>[] = [
+export const columns = (actions?: ColumnActions): ColumnDef<IProduct>[] => [
   {
     accessorKey: "id",
     header: "ID",
@@ -59,7 +52,7 @@ export const columns: ColumnDef<Product>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      console.log('row', row)
+      const product = row.original;
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -72,10 +65,13 @@ export const columns: ColumnDef<Product>[] = [
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
 
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => actions?.onEdit?.(product)}>
               <SquarePen /> Edit
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-500">
+            <DropdownMenuItem
+              className="text-red-500"
+              onClick={() => actions?.onDelete?.(product)}
+            >
               <Trash2 className="text-red-500" />
               Delete
             </DropdownMenuItem>
