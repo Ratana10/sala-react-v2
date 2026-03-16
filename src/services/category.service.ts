@@ -7,6 +7,15 @@ export const getCategories = async (search?: string) => {
   return data;
 };
 
+export const getCategoryList = async () => {
+  const res = await fetch(`http://localhost:3000/api/v1/categories/list`);
+
+  const data = await res.json();
+
+  console.log("Fetched data", data);
+  return data;
+};
+
 export const createCategory = async (request: any) => {
   const res = await fetch(`http://localhost:3000/api/v1/categories`, {
     method: "POST",

@@ -1,12 +1,11 @@
 import { useForm } from "@tanstack/react-form";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldContent,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -20,7 +19,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -29,14 +27,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { useCategories } from "@/hooks/useCategories";
-import { useCreateProduct } from "@/hooks/useProduct";
+import { useCategoryList } from "@/hooks/useCategories";
+import { useCreateProduct, useUpdateProduct } from "@/hooks/useProduct";
 import { Spinner } from "../ui/spinner";
+import type { IProduct } from "@/types/product";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
-  price: z.number().optional(),
-  categoryId: z.number().optional(),
+  price: z.number().min(0, "Price must be 0 or more"),
+  categoryId: z
+    .union([z.undefined(), z.number().min(1, "Category is required")])
+    .refine((value) => value !== undefined, {
+      message: "Category is required",
+    }),
   qty: z.number().int().min(0, "Quantity must be 0 or more"),
 });
 
@@ -45,46 +48,71 @@ export type ProductSchema = z.infer<typeof productSchema>;
 interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
+  product?: IProduct;
 }
 
-const ProductForm = ({ open, setOpen }: Props) => {
+const ProductForm = ({ open, setOpen, product }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const { data } = useCategories();
-  console.log("Data category", data);
+  const { data } = useCategoryList();
 
   const { mutate: createProductMutate } = useCreateProduct();
+  const { mutate: updateProductMutate } = useUpdateProduct();
 
   const form = useForm({
     defaultValues: {
-      name: "",
-      price: 0,
-      categoryId: 0,
-      qty: 0,
+      name: product?.name ?? "",
+      price: product?.price ? Number(product.price) : 0,
+      categoryId: product?.categoryId ?? undefined,
+      qty: product?.qty ?? 0,
     },
     validators: {
       onSubmit: productSchema,
     },
     onSubmit: async ({ value }) => {
-      console.log("value", value);
-      setIsLoading(true)
+      setIsLoading(true);
 
-      createProductMutate(value, {
-        onSuccess: () => {
-          setOpen(false);
-          form.reset()
-        },
-        onSettled: ()=> {
-          setIsLoading(false)
-        }
-      });
+      if (product) {
+        updateProductMutate(
+          { id: product.id, request: value },
+          {
+            onSuccess: () => {
+              setOpen(false);
+              form.reset();
+            },
+            onSettled: () => {
+              setIsLoading(false);
+            },
+          },
+        );
+      } else {
+        createProductMutate(value, {
+          onSuccess: () => {
+            setOpen(false);
+            form.reset();
+          },
+          onSettled: () => {
+            setIsLoading(false);
+          },
+        });
+      }
     },
   });
+
+  useEffect(() => {
+    if (product) {
+      form.setFieldValue("name", product.name);
+      form.setFieldValue("price", Number(product.price));
+      form.setFieldValue("categoryId", product.categoryId);
+      form.setFieldValue("qty", product.qty);
+    } else {
+      form.reset();
+    }
+  }, [product]);
 
   return (
     <div>
       {isLoading && <Spinner />}
-    
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-sm">

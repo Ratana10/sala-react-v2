@@ -22,3 +22,17 @@ export const createProduct = async (request: ProductSchema)=>{
   const data = await res.json()
   return data;
 }
+
+export const updateProduct = async (id: number, request: ProductSchema)=>{
+  const res = await fetch(`http://localhost:3000/api/v1/products/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(request)
+  });
+
+
+  const data = await res.json()
+  return data;
+}

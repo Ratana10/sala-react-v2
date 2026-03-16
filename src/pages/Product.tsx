@@ -4,10 +4,11 @@ import ProductForm from "@/components/products/ProductForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import {fetchProduct} from "@/services/product.service"
+import { fetchProduct } from "@/services/product.service";
 import { useQuery } from "@tanstack/react-query";
 import { CirclePlus } from "lucide-react";
 import { useState } from "react";
+import type { IProduct } from "@/types/product";
 
 const Product = () => {
   const [searchInput, setSearchInput] = useState("");
@@ -15,6 +16,8 @@ const Product = () => {
   const [search, setSearch] = useState("");
 
   const [open, setOpen] = useState(false);
+
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | undefined>(undefined)
 
   const query = useQuery({
     queryKey: ["products", search],
@@ -34,6 +37,16 @@ const Product = () => {
     setSearch(searchInput);
   };
 
+  const onEdit = (product: IProduct) => {
+    console.log("edit product", product);
+    setSelectedProduct(product)
+    setOpen(true)
+  };
+
+  const onDelete = (product: IProduct) => {
+    console.log("delete product", product);
+  };
+
   return (
     <div>
       <div className="flex justify-between">
@@ -51,9 +64,12 @@ const Product = () => {
         </Button>
       </div>
 
-      <ProductForm open={open} setOpen={setOpen} />
+      <ProductForm open={open} setOpen={setOpen} product={selectedProduct} />
 
-      <DataTable columns={columns} data={query.data.data ?? []} />
+      <DataTable
+        columns={columns({ onEdit, onDelete })}
+        data={query.data.data ?? []}
+      />
     </div>
   );
 };
