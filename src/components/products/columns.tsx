@@ -20,6 +20,10 @@ interface Props {
 }
 export const columns = ({ onEdit, onDelete }: Props): ColumnDef<IProduct>[] => [
   {
+    header: "NO",
+    cell: ({row}) => <div>{row.index + 1}</div>
+  },
+  {
     accessorKey: "id",
     header: "ID",
   },

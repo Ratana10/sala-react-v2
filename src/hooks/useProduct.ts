@@ -1,6 +1,13 @@
-import { createProduct, updateProduct } from "@/services/product.service";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { id } from "zod/v4/locales";
+import { createProduct, fetchProduct, updateProduct } from "@/services/product.service";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+
+export const useProducts = (search?: string, page?: number, limit?: number) => {
+  return useQuery({
+    queryKey: ["products", search, page, limit],
+    queryFn: () => fetchProduct(search, page, limit),
+  });
+};
 
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
@@ -16,12 +23,12 @@ export const useCreateProduct = () => {
   });
 };
 
-
 export const useUpdateProduct = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({id, request}: {id: number, request: any}) => updateProduct(id, request),
+    mutationFn: ({ id, request }: { id: number; request: any }) =>
+      updateProduct(id, request),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
     },

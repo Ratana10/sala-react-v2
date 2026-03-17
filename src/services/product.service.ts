@@ -1,7 +1,13 @@
 import type { ProductSchema } from "@/components/products/ProductForm";
 
-export const fetchProduct = async (search?: string) => {
-  const res = await fetch(`http://localhost:3000/api/v1/products?search=${search}`);
+export const fetchProduct = async (
+  search?: string,
+  page: number = 1,
+  limit: number = 10,
+) => {
+  const res = await fetch(
+    `http://localhost:3000/api/v1/products?search=${search}&page=${page}&limit=${limit}`,
+  );
 
   const data = await res.json();
 
@@ -9,30 +15,28 @@ export const fetchProduct = async (search?: string) => {
   return data;
 };
 
-export const createProduct = async (request: ProductSchema)=>{
+export const createProduct = async (request: ProductSchema) => {
   const res = await fetch(`http://localhost:3000/api/v1/products`, {
     method: "POST",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(request)
+    body: JSON.stringify(request),
   });
 
-
-  const data = await res.json()
+  const data = await res.json();
   return data;
-}
+};
 
-export const updateProduct = async (id: number, request: ProductSchema)=>{
+export const updateProduct = async (id: number, request: ProductSchema) => {
   const res = await fetch(`http://localhost:3000/api/v1/products/${id}`, {
     method: "PUT",
     headers: {
-      "Content-Type": "application/json"
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(request)
+    body: JSON.stringify(request),
   });
 
-
-  const data = await res.json()
+  const data = await res.json();
   return data;
-}
+};

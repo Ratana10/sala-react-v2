@@ -9,6 +9,24 @@ import { useQuery } from "@tanstack/react-query";
 import { CirclePlus } from "lucide-react";
 import { useState } from "react";
 import type { IProduct } from "@/types/product";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useProducts } from "@/hooks/useProduct";
 
 const Product = () => {
   const [searchInput, setSearchInput] = useState("");
@@ -17,14 +35,23 @@ const Product = () => {
 
   const [open, setOpen] = useState(false);
 
-  const [selectedProduct, setSelectedProduct] = useState<IProduct | undefined>(undefined)
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
-  const query = useQuery({
-    queryKey: ["products", search],
-    queryFn: () => fetchProduct(searchInput),
-  });
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | undefined>(
+    undefined,
+  );
 
-  if (query.isLoading) {
+  const { data: productData, isLoading } = useProducts(search, page, limit);
+
+  const pagination = productData?.pagination;
+  const totalPages = Math.ceil(
+    (pagination?.total || 0) / (pagination?.limit || 1),
+  );
+  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+
+  console.log("pagination", pagination);
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center">
         <Spinner />
@@ -39,8 +66,8 @@ const Product = () => {
 
   const onEdit = (product: IProduct) => {
     console.log("edit product", product);
-    setSelectedProduct(product)
-    setOpen(true)
+    setSelectedProduct(product);
+    setOpen(true);
   };
 
   const onDelete = (product: IProduct) => {
@@ -68,8 +95,56 @@ const Product = () => {
 
       <DataTable
         columns={columns({ onEdit, onDelete })}
-        data={query.data.data ?? []}
+        data={productData?.data ?? []}
       />
+
+      <div className="flex justify-between mt-4">
+        <div className="flex w-full items-center gap-2">
+          <p>Rows per page</p>
+
+          <Select
+            defaultValue="10"
+            onValueChange={(value) => setLimit(Number(value))}
+          >
+            <SelectTrigger className="w-20" id="select-rows-per-page">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent align="start">
+              <SelectGroup>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="25">25</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Pagination className="flex justify-end">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => setPage(pagination?.prevPage)}
+              />
+            </PaginationItem>
+            {pages.map((p) => (
+              <PaginationItem key={p}>
+                <PaginationLink
+                  isActive={p === pagination?.currentPage}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+
+            <PaginationItem>
+              <PaginationNext onClick={() => setPage(pagination?.nextPage)} />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      </div>
     </div>
   );
 };
