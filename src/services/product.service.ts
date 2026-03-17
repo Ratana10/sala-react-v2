@@ -3,7 +3,7 @@ import type { ProductSchema } from "@/components/products/ProductForm";
 export const fetchProduct = async (
   search?: string,
   page?: number,
-  limit?: number = 1,
+  limit?: number = 10,
 ) => {
   const res = await fetch(
     `http://localhost:3000/api/v1/products?search=${search}&page=${page}&limit=${limit}`,

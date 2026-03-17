@@ -3,21 +3,14 @@ import { DataTable } from "@/components/data-table";
 import ProductForm from "@/components/products/ProductForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-  PaginationEllipsis,
-} from "@/components/ui/pagination";
+
 import { Spinner } from "@/components/ui/spinner";
 import { fetchProduct } from "@/services/product.service";
 import { useQuery } from "@tanstack/react-query";
 import { CirclePlus } from "lucide-react";
 import { useState } from "react";
 import type { IProduct } from "@/types/product";
+import CustomPagination from "@/components/CustomPagination";
 
 const ITEMS_PER_PAGE = 10;
 
@@ -28,6 +21,7 @@ const Product = () => {
 
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
 
   const [selectedProduct, setSelectedProduct] = useState<IProduct | undefined>(
     undefined,
@@ -117,7 +111,13 @@ const Product = () => {
         data={query.data.data ?? []}
       />
 
-      <Pagination>
+      <CustomPagination
+        pagination={pagination}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+      />
+
+      {/* <Pagination>
         <PaginationContent>
           <PaginationItem>
             <PaginationPrevious
@@ -151,7 +151,7 @@ const Product = () => {
             />
           </PaginationItem>
         </PaginationContent>
-      </Pagination>
+      </Pagination> */}
     </div>
   );
 };

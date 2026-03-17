@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Category from "./pages/Category";
 import { Toaster } from "./components/ui/sonner";
 import LoginPage from "./pages/LoginPage";
+import Test from "./pages/Test";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +22,7 @@ function App() {
           </Route>
 
           <Route element={<DashboardLayout />}>
+            <Route path="/test" element={<Test />} />
             <Route path="/products" element={<Product />} />
             <Route path="/users" element={<User />} />
             <Route path="/categories" element={<Category />} />
