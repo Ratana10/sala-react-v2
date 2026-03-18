@@ -35,9 +35,9 @@ const data = {
   },
   teams: [
     {
-      name: "Acme Inc",
+      name: "Sala-IT",
       logo: GalleryVerticalEnd,
-      plan: "Enterprise",
+      plan: "",
     },
     {
       name: "Acme Corp.",
@@ -59,15 +59,15 @@ const data = {
       items: [
         {
           title: "Products",
-          url: "/products",
+          url: "/admin/products",
         },
         {
           title: "Category",
-          url: "/categories",
+          url: "/admin/categories",
         },
         {
           title: "Users",
-          url: "/users",
+          url: "/admin/users",
         },
       ],
     },
