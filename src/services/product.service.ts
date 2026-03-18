@@ -1,42 +1,24 @@
 import type { ProductSchema } from "@/components/products/ProductForm";
+import api from "./lib/axios";
 
 export const fetchProduct = async (
   search?: string,
   page: number = 1,
   limit: number = 10,
 ) => {
-  const res = await fetch(
-    `http://localhost:3000/api/v1/products?search=${search}&page=${page}&limit=${limit}`,
-  );
-
-  const data = await res.json();
-
-  console.log("Fetched data", data);
-  return data;
+  return await api.get(`/api/v1/products`, {
+    params: {
+      search,
+      page,
+      limit,
+    },
+  });
 };
 
 export const createProduct = async (request: ProductSchema) => {
-  const res = await fetch(`http://localhost:3000/api/v1/products`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(request),
-  });
-
-  const data = await res.json();
-  return data;
+  return await api.post(`/api/v1/products`, request);
 };
 
 export const updateProduct = async (id: number, request: ProductSchema) => {
-  const res = await fetch(`http://localhost:3000/api/v1/products/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(request),
-  });
-
-  const data = await res.json();
-  return data;
+  return await api.put(`/api/v1/products/${id}`, request);
 };

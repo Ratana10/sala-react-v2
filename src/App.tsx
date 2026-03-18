@@ -21,9 +21,9 @@ function App() {
           </Route>
 
           <Route element={<DashboardLayout />}>
-            <Route path="/products" element={<Product />} />
-            <Route path="/users" element={<User />} />
-            <Route path="/categories" element={<Category />} />
+            <Route path="/admin/products" element={<Product />} />
+            <Route path="/admin/users" element={<User />} />
+            <Route path="/admin/categories" element={<Category />} />
           </Route>
         </Routes>
       </BrowserRouter>

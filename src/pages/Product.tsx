@@ -27,8 +27,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useProducts } from "@/hooks/useProduct";
+import { getAcessToken } from "@/utils/tokenStorage";
+import { useNavigate } from "react-router-dom";
 
 const Product = () => {
+  const navigate = useNavigate();
+
   const [searchInput, setSearchInput] = useState("");
 
   const [search, setSearch] = useState("");
@@ -74,6 +78,11 @@ const Product = () => {
     console.log("delete product", product);
   };
 
+  const accessToken = getAcessToken();
+  if (!accessToken) {
+    navigate("/login");
+  }
+  
   return (
     <div>
       <div className="flex justify-between">
