@@ -1,4 +1,4 @@
-import { createProduct, fetchProduct, updateProduct } from "@/services/product.service";
+import { createProduct, fetchProduct, updateProduct, uploadProductImage } from "@/services/product.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 
@@ -34,6 +34,16 @@ export const useUpdateProduct = () => {
     },
     onError: (error: any) => {
       console.log("Failed to create product", error);
+    },
+  });
+};
+
+export const useUploadProductImage = () => {
+  return useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) =>
+      uploadProductImage(id, file),
+    onError: (error: any) => {
+      console.log("Failed to upload product image", error);
     },
   });
 };

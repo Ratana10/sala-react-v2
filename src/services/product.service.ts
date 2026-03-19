@@ -40,3 +40,19 @@ export const updateProduct = async (id: number, request: ProductSchema) => {
   const data = await res.json();
   return data;
 };
+
+export const uploadProductImage = async (id: number, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(
+    `http://localhost:3000/api/v1/products/${id}/upload`,
+    {
+      method: "POST",
+      body: formData,
+    },
+  );
+
+  const data = await res.json();
+  return data;
+};

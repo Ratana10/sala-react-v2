@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -28,9 +28,15 @@ import {
   SelectValue,
 } from "../ui/select";
 import { useCategoryList } from "@/hooks/useCategories";
-import { useCreateProduct, useUpdateProduct } from "@/hooks/useProduct";
+import {
+  useCreateProduct,
+  useUpdateProduct,
+  useUploadProductImage,
+} from "@/hooks/useProduct";
 import { Spinner } from "../ui/spinner";
 import type { IProduct } from "@/types/product";
+import { cn } from "@/lib/utils";
+import { Trash2, Upload } from "lucide-react";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -58,6 +64,7 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
 
   const { mutate: createProductMutate } = useCreateProduct();
   const { mutate: updateProductMutate } = useUpdateProduct();
+  const { mutate: uploadImageMutate } = useUploadProductImage();
 
   const form = useForm({
     defaultValues: {
@@ -76,9 +83,14 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
         updateProductMutate(
           { id: product.id, request: value },
           {
-            onSuccess: () => {
+            onSuccess: async () => {
+              uploadedFiles.map((file) =>
+                uploadImageMutate({ id: product.id, file }),
+              );
+
               setOpen(false);
               form.reset();
+              setUploadedFiles([]);
             },
             onSettled: () => {
               setIsLoading(false);
@@ -87,9 +99,14 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
         );
       } else {
         createProductMutate(value, {
-          onSuccess: () => {
+          onSuccess: async (created) => {
+            uploadedFiles.map((file) =>
+              uploadImageMutate({ id: created.data.id, file }),
+            );
+
             setOpen(false);
             form.reset();
+            setUploadedFiles([]);
           },
           onSettled: () => {
             setIsLoading(false);
@@ -98,6 +115,7 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
       }
     },
   });
+
 
   useEffect(() => {
     if (product) {
@@ -110,12 +128,55 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
     }
   }, [product]);
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+
+  const handleFileSelect = (files: FileList | null) => {
+    if (!files) return;
+
+    const newFiles = Array.from(files);
+    setUploadedFiles((prev) => [...prev, ...newFiles]);
+
+    // Simulate upload progress for each file
+    newFiles.forEach((file) => {
+      let progress = 0;
+      const interval = setInterval(() => {
+        progress += Math.random() * 10;
+        if (progress >= 100) {
+          progress = 100;
+          clearInterval(interval);
+        }
+        setFileProgresses((prev) => ({
+          ...prev,
+          [file.name]: Math.min(progress, 100),
+        }));
+      }, 300);
+    });
+  };
+
+  const handleBoxClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    handleFileSelect(e.dataTransfer.files);
+  };
+
+  const removeFile = (filename: string) => {
+    setUploadedFiles((prev) => prev.filter((file) => file.name !== filename));
+  };
+
   return (
     <div>
       {isLoading && <Spinner />}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Product Form</DialogTitle>
             <DialogDescription>Product Information Detail</DialogDescription>
@@ -250,6 +311,93 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
                   );
                 }}
               />
+
+              <div className="">
+                <div
+                  className="border-2 border-dashed border-border rounded-md p-8 flex flex-col items-center justify-center text-center cursor-pointer"
+                  onClick={handleBoxClick}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                >
+                  <div className="mb-2 bg-muted rounded-full p-3">
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <p className="text-pretty text-sm font-medium text-foreground">
+                    Upload a project image
+                  </p>
+                  <p className="text-pretty text-sm text-muted-foreground mt-1">
+                    or,{" "}
+                    <label
+                      htmlFor="fileUpload"
+                      className="text-primary hover:text-primary/90 font-medium cursor-pointer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      click to browse
+                    </label>{" "}
+                    (4MB max)
+                  </p>
+                  <input
+                    type="file"
+                    id="fileUpload"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={(e) => handleFileSelect(e.target.files)}
+                  />
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "space-y-3",
+                  uploadedFiles.length > 0 ? "mt-4" : "",
+                )}
+              >
+                {uploadedFiles.map((file, index) => {
+                  const imageUrl = URL.createObjectURL(file);
+
+                  return (
+                    <div
+                      className="border border-border rounded-lg p-2 flex flex-col"
+                      key={file.name + index}
+                      onLoad={() => {
+                        return () => URL.revokeObjectURL(imageUrl);
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-18 h-14 bg-muted rounded-sm flex items-center justify-center self-start row-span-2 overflow-hidden">
+                          <img
+                            src={imageUrl}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        <div className="flex-1 pr-1">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-foreground truncate max-w-[250px]">
+                                {file.name}
+                              </span>
+                              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                {Math.round(file.size / 1024)} KB
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon-sm"
+                              className="bg-transparent! hover:text-red-500"
+                              onClick={() => removeFile(file.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </FieldGroup>
           </form>
           <DialogFooter>
