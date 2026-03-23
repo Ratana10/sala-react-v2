@@ -29,6 +29,7 @@ import {
 import { useProducts } from "@/hooks/useProduct";
 import { getAcessToken } from "@/utils/tokenStorage";
 import { useNavigate } from "react-router-dom";
+import FileUpload01 from "@/components/file-upload-01";
 
 const Product = () => {
   const navigate = useNavigate();
@@ -85,6 +86,7 @@ const Product = () => {
   
   return (
     <div>
+    <FileUpload01 />
       <div className="flex justify-between">
         <div className="flex gap-2 mb-4">
           <Input

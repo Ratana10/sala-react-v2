@@ -22,3 +22,14 @@ export const createProduct = async (request: ProductSchema) => {
 export const updateProduct = async (id: number, request: ProductSchema) => {
   return await api.put(`/api/v1/products/${id}`, request);
 };
+
+export const uploadProductImage = async (id: number, file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  return await api.post(`/api/v1/products/${id}/upload`, formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+};

@@ -1,3 +1,5 @@
 npm i date-fns
 
 npm i axios
+
+npx shadcn@latest add @blocks-so/file-upload-01
