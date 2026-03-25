@@ -1,5 +1,5 @@
 import { useForm } from "@tanstack/react-form";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import z from "zod";
 
 import { Button } from "@/components/ui/button";
@@ -30,13 +30,13 @@ import {
 import { useCategoryList } from "@/hooks/useCategories";
 import {
   useCreateProduct,
+  useDeleteProductImage,
   useUpdateProduct,
   useUploadProductImage,
 } from "@/hooks/useProduct";
 import { Spinner } from "../ui/spinner";
 import type { IProduct } from "@/types/product";
 import { Trash2, Upload } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -64,12 +64,14 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
   const [fileProgresses, setFileProgresses] = useState<Record<string, number>>(
     {},
   );
+  const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
 
   const { data } = useCategoryList();
 
   const { mutate: createProductMutate } = useCreateProduct();
   const { mutate: updateProductMutate } = useUpdateProduct();
   const { mutate: uploadProductImageMutate } = useUploadProductImage();
+  const { mutate: deleteProductImageMutate } = useDeleteProductImage();
 
   const form = useForm({
     defaultValues: {
@@ -88,7 +90,21 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
         updateProductMutate(
           { id: product.id, request: value },
           {
-            onSuccess: () => {
+            onSuccess: (res) => {
+              if (res.data.id) {
+                uploadedFiles.forEach((file) => {
+                  uploadProductImageMutate({ id: res.data.id, request: file });
+                });
+              }
+
+              deletedImageIds.forEach((id) => {
+                deleteProductImageMutate(id);
+              });
+
+              setUploadedFiles([]);
+              setFileProgresses({});
+              setDeletedImageIds([]);
+
               setOpen(false);
               form.reset();
             },
@@ -107,6 +123,10 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
               });
             }
 
+            setUploadedFiles([]);
+            setFileProgresses({});
+            setDeletedImageIds([]);
+
             setOpen(false);
             form.reset();
           },
@@ -117,17 +137,6 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
       }
     },
   });
-
-  useEffect(() => {
-    if (product) {
-      form.setFieldValue("name", product.name);
-      form.setFieldValue("price", Number(product.price));
-      form.setFieldValue("categoryId", product.categoryId);
-      form.setFieldValue("qty", product.qty);
-    } else {
-      form.reset();
-    }
-  }, [product]);
 
   const handleFileSelect = (files: FileList | null) => {
     if (!files) return;
@@ -174,12 +183,25 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
     });
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen);
+    if (newOpen) {
+      // Reset form state when dialog opens
+      setUploadedFiles([]);
+      setFileProgresses({});
+      setDeletedImageIds([]);
+    }
+  };
+
   return (
     <div>
       {isLoading && <Spinner />}
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-sm">
+      <Dialog open={open} onOpenChange={handleOpenChange}>
+        <DialogContent
+          className="sm:max-w-[800px] h-[90vh]"
+          key={product?.id ?? "create"}
+        >
           <DialogHeader>
             <DialogTitle>Product Form</DialogTitle>
             <DialogDescription>Product Information Detail</DialogDescription>
@@ -190,6 +212,8 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
               e.preventDefault();
               form.handleSubmit();
             }}
+            key={product?.id ?? "create"}
+            className="overflow-y-auto"
           >
             <FieldGroup>
               <form.Field
@@ -218,71 +242,73 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
                 }}
               />
 
-              <form.Field
-                name="price"
-                children={(field) => {
-                  const isInvalid =
-                    field.state.meta.isTouched && !field.state.meta.isValid;
-                  return (
-                    <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>Price</FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        type={"number"}
-                        onChange={(e) =>
-                          field.handleChange(e.target.valueAsNumber)
-                        }
-                        aria-invalid={isInvalid}
-                        placeholder="Enter price"
-                      />
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </Field>
-                  );
-                }}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <form.Field
+                  name="price"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Price</FieldLabel>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          type={"number"}
+                          onChange={(e) =>
+                            field.handleChange(e.target.valueAsNumber)
+                          }
+                          aria-invalid={isInvalid}
+                          placeholder="Enter price"
+                        />
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
+                />
 
-              <form.Field
-                name="qty"
-                children={(field) => {
-                  const isInvalid =
-                    field.state.meta.isTouched && !field.state.meta.isValid;
-                  return (
-                    <Field data-invalid={isInvalid}>
-                      <FieldLabel htmlFor={field.name}>Quantity</FieldLabel>
-                      <Input
-                        id={field.name}
-                        name={field.name}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        type={"number"}
-                        onChange={(e) =>
-                          field.handleChange(e.target.valueAsNumber)
-                        }
-                        aria-invalid={isInvalid}
-                        placeholder="Enter quantity"
-                      />
-                      {isInvalid && (
-                        <FieldError errors={field.state.meta.errors} />
-                      )}
-                    </Field>
-                  );
-                }}
-              />
+                <form.Field
+                  name="qty"
+                  children={(field) => {
+                    const isInvalid =
+                      field.state.meta.isTouched && !field.state.meta.isValid;
+                    return (
+                      <Field data-invalid={isInvalid}>
+                        <FieldLabel htmlFor={field.name}>Quantity</FieldLabel>
+                        <Input
+                          id={field.name}
+                          name={field.name}
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          type={"number"}
+                          onChange={(e) =>
+                            field.handleChange(e.target.valueAsNumber)
+                          }
+                          aria-invalid={isInvalid}
+                          placeholder="Enter quantity"
+                        />
+                        {isInvalid && (
+                          <FieldError errors={field.state.meta.errors} />
+                        )}
+                      </Field>
+                    );
+                  }}
+                />
+              </div>
 
-              <form.Field
+               <form.Field
                 name="categoryId"
                 children={(field) => {
                   const isInvalid =
                     field.state.meta.isTouched && !field.state.meta.isValid;
                   return (
-                    <Field orientation="responsive" data-invalid={isInvalid}>
+                    <Field data-invalid={isInvalid}>
                       <FieldContent>
-                        <FieldLabel htmlFor="form-tanstack-select-language">
+                        <FieldLabel htmlFor={field.name}>
                           Category
                         </FieldLabel>
 
@@ -294,16 +320,17 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
                         name={field.name}
                         value={String(field.state.value)}
                         onValueChange={(val) => field.handleChange(Number(val))}
+                        
                       >
                         <SelectTrigger
                           id="form-tanstack-select-language"
                           aria-invalid={isInvalid}
-                          className="min-w-[120px]"
+                         className="w-full" 
                         >
                           <SelectValue placeholder="Select the category" />
                         </SelectTrigger>
                         <SelectContent position="item-aligned">
-                          {data.data.map((category, index) => (
+                          {data?.data.map((category, index) => (
                             <SelectItem key={index} value={String(category.id)}>
                               {category.name}
                             </SelectItem>
@@ -350,12 +377,61 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
                 </div>
               </div>
 
-              <div
-                className={cn(
-                  "pb-5 space-y-3",
-                  uploadedFiles.length > 0 ? "mt-4" : "",
-                )}
-              >
+              {/* Display existing product images */}
+              {product?.productImages && product.productImages.length > 0 && (
+                <div className="">
+                  <p className="text-sm font-medium text-foreground mb-3">
+                    Existing Images
+                  </p>
+                  <div className="space-y-3">
+                    {product.productImages
+                      .filter((img) => !deletedImageIds.includes(img.id))
+                      .map((image) => (
+                        <div
+                          className="border border-border rounded-lg p-2 flex flex-col"
+                          key={image.id}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-18 h-14 bg-muted rounded-sm flex items-center justify-center self-start overflow-hidden">
+                              <img
+                                src={image.imageUrl}
+                                alt={image.fileName}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+
+                            <div className="flex-1 pr-1">
+                              <div className="flex justify-between items-center">
+                                <span className="text-sm text-foreground truncate max-w-[250px]">
+                                  {image.fileName}
+                                </span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="bg-transparent! hover:text-red-500"
+                                  onClick={() =>
+                                    setDeletedImageIds((prev) => [
+                                      ...prev,
+                                      image.id,
+                                    ])
+                                  }
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Uploaded on{" "}
+                                {new Date(image.createdAt).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3">
                 {uploadedFiles.map((file, index) => {
                   const imageUrl = URL.createObjectURL(file);
 

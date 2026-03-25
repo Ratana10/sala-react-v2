@@ -1,4 +1,4 @@
-import { createProduct, fetchProduct, updateProduct, uploadProductImage } from "@/services/product.service";
+import { createProduct, deleteProductImage, fetchProduct, updateProduct, uploadProductImage } from "@/services/product.service";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 
@@ -55,3 +55,17 @@ export const useUploadProductImage = () => {
   });
 };
 
+export const useDeleteProductImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (imageId: number) => deleteProductImage(imageId),
+    onSuccess: () => {
+      console.log("Product image deleted successfully");
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (error: Error) => {
+      console.log("Failed to delete product image", error);
+    },
+  });
+};

@@ -83,10 +83,10 @@ const Product = () => {
   if (!accessToken) {
     navigate("/login");
   }
-  
+
   return (
     <div>
-    <FileUpload01 />
+      <FileUpload01 />
       <div className="flex justify-between">
         <div className="flex gap-2 mb-4">
           <Input
@@ -97,12 +97,23 @@ const Product = () => {
           <Button onClick={() => handleSearch()}>Search</Button>
         </div>
 
-        <Button onClick={() => setOpen(true)}>
+        <Button
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
           <CirclePlus /> Create
         </Button>
       </div>
 
-      <ProductForm open={open} setOpen={setOpen} product={selectedProduct} />
+      <ProductForm
+        open={open}
+        setOpen={() => {
+          setOpen(false);
+          setSelectedProduct(undefined);
+        }}
+        product={selectedProduct}
+      />
 
       <DataTable
         columns={columns({ onEdit, onDelete })}
