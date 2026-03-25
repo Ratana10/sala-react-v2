@@ -86,7 +86,6 @@ const Product = () => {
   
   return (
     <div>
-    <FileUpload01 />
       <div className="flex justify-between">
         <div className="flex gap-2 mb-4">
           <Input

@@ -21,11 +21,22 @@ interface Props {
 export const columns = ({ onEdit, onDelete }: Props): ColumnDef<IProduct>[] => [
   {
     header: "NO",
-    cell: ({row}) => <div>{row.index + 1}</div>
+    cell: ({ row }) => <div>{row.index + 1}</div>,
   },
   {
     accessorKey: "id",
     header: "ID",
+  },
+  {
+    header: "Image",
+    cell: ({ row }) => (
+      <div>
+        <img
+          className="aspect-square w-[100px] h-[100px]"
+          src={row.original.productImages?.[0]?.imageUrl ?? "/no-image.png"}
+        />
+      </div>
+    ),
   },
   {
     header: "Product name",

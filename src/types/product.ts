@@ -9,4 +9,12 @@ export interface IProduct {
     id: number;
     name: string;
   };
+  productImages?: IProductImage[]
+}
+
+export interface IProductImage {
+  id: number;
+  productId: number;
+  imageUrl: string;
+  fileName: string;
 }
