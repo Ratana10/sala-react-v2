@@ -83,7 +83,7 @@ const Product = () => {
   if (!accessToken) {
     navigate("/login");
   }
-  
+
   return (
     <div>
       <div className="flex justify-between">
@@ -101,7 +101,14 @@ const Product = () => {
         </Button>
       </div>
 
-      <ProductForm open={open} setOpen={setOpen} product={selectedProduct} />
+      <ProductForm
+        open={open}
+        setOpen={() => {
+          setOpen(false);
+          setSelectedProduct(undefined)
+        }}
+        product={selectedProduct}
+      />
 
       <DataTable
         columns={columns({ onEdit, onDelete })}

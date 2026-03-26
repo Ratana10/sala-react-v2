@@ -33,3 +33,8 @@ export const uploadProductImage = async (id: number, file: File) => {
     },
   });
 };
+
+
+export const deleteProductImage = async (id?: number) => {
+  return await api.delete(`/api/v1/products/images/${id}`);
+};

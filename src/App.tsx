@@ -27,7 +27,7 @@ function App() {
           </Route>
         </Routes>
       </BrowserRouter>
-      <Toaster />
+      <Toaster position="top-center" />
     </QueryClientProvider>
   );
 }

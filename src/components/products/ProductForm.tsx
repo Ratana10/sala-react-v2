@@ -30,6 +30,7 @@ import {
 import { useCategoryList } from "@/hooks/useCategories";
 import {
   useCreateProduct,
+  useDeleteProductImage,
   useUpdateProduct,
   useUploadProductImage,
 } from "@/hooks/useProduct";
@@ -62,15 +63,15 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
   const [isLoading, setIsLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
-  const [fileProgresses, setFileProgresses] = useState<Record<string, number>>(
-    {},
-  );
+
+  const [deleteImageIds, setDeleteImageIds] = useState<number[]>([]);
 
   const { data } = useCategoryList();
 
   const { mutate: createProductMutate } = useCreateProduct();
   const { mutate: updateProductMutate } = useUpdateProduct();
   const { mutate: uploadProductImageMutate } = useUploadProductImage();
+  const { mutate: deleteProductImageMutate } = useDeleteProductImage();
 
   const form = useForm({
     defaultValues: {
@@ -89,8 +90,19 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
         updateProductMutate(
           { id: product.id, request: value },
           {
-            onSuccess: () => {
+            onSuccess: (res) => {
+              if (res.data?.id) {
+                uploadedFiles.map((file) =>
+                  uploadProductImageMutate({ id: res.data.id, request: file }),
+                );
+              }
+              // call to delete image ids
+              console.log("delete image ids", deleteImageIds);
+              deleteImageIds.map((imageId) =>
+                deleteProductImageMutate({ id: imageId }),
+              );
               setOpen(false);
+              setUploadedFiles([]);
               form.reset();
             },
             onSettled: () => {
@@ -108,6 +120,7 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
               });
             }
 
+            setUploadedFiles([]);
             setOpen(false);
             form.reset();
           },
@@ -135,22 +148,6 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
 
     const newFiles = Array.from(files);
     setUploadedFiles((prev) => [...prev, ...newFiles]);
-
-    // Simulate upload progress for each file
-    newFiles.forEach((file) => {
-      let progress = 0;
-      const interval = setInterval(() => {
-        progress += Math.random() * 10;
-        if (progress >= 100) {
-          progress = 100;
-          clearInterval(interval);
-        }
-        setFileProgresses((prev) => ({
-          ...prev,
-          [file.name]: Math.min(progress, 100),
-        }));
-      }, 300);
-    });
   };
 
   const handleBoxClick = () => {
@@ -168,11 +165,6 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
 
   const removeFile = (filename: string) => {
     setUploadedFiles((prev) => prev.filter((file) => file.name !== filename));
-    setFileProgresses((prev) => {
-      const newProgresses = { ...prev };
-      delete newProgresses[filename];
-      return newProgresses;
-    });
   };
 
   return (
@@ -180,14 +172,16 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
       {isLoading && <Spinner />}
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[60vw] h-[90vh] overflow-y-auto">
+        <DialogContent
+          key={product?.id ?? "create"}
+          className="sm:max-w-[60vw] h-[90vh] overflow-y-auto"
+        >
           <DialogHeader>
-            <DialogTitle>
-              {product ? "Update" : "Create"} Product
-            </DialogTitle>
+            <DialogTitle>{product ? "Update" : "Create"} Product</DialogTitle>
             <DialogDescription>Product Information Detail</DialogDescription>
           </DialogHeader>
           <form
+            key={product?.id ?? "create"}
             id="product-form"
             onSubmit={(e) => {
               e.preventDefault();
@@ -311,14 +305,16 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
                             <SelectValue placeholder="Select the category" />
                           </SelectTrigger>
                           <SelectContent position="item-aligned">
-                            {data?.data.map((category: ICategory, index: number) => (
-                              <SelectItem
-                                key={index}
-                                value={String(category.id)}
-                              >
-                                {category.name}
-                              </SelectItem>
-                            ))}
+                            {data?.data.map(
+                              (category: ICategory, index: number) => (
+                                <SelectItem
+                                  key={index}
+                                  value={String(category.id)}
+                                >
+                                  {category.name}
+                                </SelectItem>
+                              ),
+                            )}
                           </SelectContent>
                         </Select>
                       </Field>
@@ -390,7 +386,13 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
                                 variant="ghost"
                                 size="icon-sm"
                                 className="bg-transparent! hover:text-red-500"
-                                // onClick={() => removeFile(file.name)}
+                                type="button"
+                                onClick={() => {
+                                  setDeleteImageIds((prev) => [
+                                    ...prev,
+                                    image.id,
+                                  ]);
+                                }}
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>
@@ -447,20 +449,6 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <div className="h-2 bg-muted rounded-full overflow-hidden flex-1">
-                              <div
-                                className="h-full bg-primary"
-                                style={{
-                                  width: `${fileProgresses[file.name] || 0}%`,
-                                }}
-                              ></div>
-                            </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">
-                              {Math.round(fileProgresses[file.name] || 0)}%
-                            </span>
                           </div>
                         </div>
                       </div>
