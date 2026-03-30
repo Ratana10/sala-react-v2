@@ -2,6 +2,7 @@ import {
   createProduct,
   deleteProductImage,
   fetchProduct,
+  fetchProductById,
   updateProduct,
   uploadProductImage,
 } from "@/services/product.service";
@@ -12,6 +13,14 @@ export const useProducts = (search?: string, page?: number, limit?: number) => {
   return useQuery({
     queryKey: ["products", search, page, limit],
     queryFn: () => fetchProduct(search, page, limit),
+  });
+};
+
+export const useProductById = (id: number) => {
+  return useQuery({
+    queryKey: ["products", id],
+    queryFn: () => fetchProductById(id),
+    enabled: !!id,
   });
 };
 
