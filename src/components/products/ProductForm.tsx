@@ -110,7 +110,9 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
             },
           },
         );
-      } else {
+      }
+      
+      else {
         createProductMutate(value, {
           onSuccess: (res) => {
             console.log("created product response", res);
@@ -360,7 +362,9 @@ const ProductForm = ({ open, setOpen, product }: Props) => {
 
               {product?.productImages && product.productImages?.length > 0 && (
                 <div className="space-y-2">
-                  {product.productImages.map(
+                  {product.productImages
+                  .filter((image: IProductImage) => !deleteImageIds.includes(image.id))
+                  .map(
                     (image: IProductImage, index: number) => (
                       <div
                         key={index}
