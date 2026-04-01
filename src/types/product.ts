@@ -2,7 +2,7 @@ export interface IProduct {
   id: number;
   name: string;
   price: number;
-  qty: string;
+  qty: number;
   categoryId: number;
   isActive: boolean;
   category: {

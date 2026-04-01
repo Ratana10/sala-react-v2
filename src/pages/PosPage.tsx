@@ -12,11 +12,16 @@ import {
   Trash2,
   CreditCard,
   QrCode,
+  TrashIcon,
+  MinusIcon,
+  PlusIcon,
 } from "lucide-react";
 import { useProducts } from "@/hooks/useProduct";
 import type { IProduct } from "@/types/product";
 import { useCategories } from "@/hooks/useCategories";
 import type { ICategory } from "@/types/category";
+import { toast } from "sonner";
+import type { ICart } from "@/types/cart";
 
 interface MenuItem {
   id: string;
@@ -31,82 +36,69 @@ interface OrderItem extends MenuItem {
   quantity: number;
 }
 
-
 const menuItems: MenuItem[] = [
   {
     id: "1",
     name: "Duck Salad",
     category: "Pizza",
     price: 35.0,
-    image: "/placeholder.svg?height=200&width=300"
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "2",
     name: "Breakfast board",
     category: "Taco",
     price: 14.0,
-    image: "/placeholder.svg?height=200&width=300"
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "3",
     name: "Hummus",
     category: "Sandwich",
     price: 24.0,
-    image: "/placeholder.svg?height=200&width=300"
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "4",
     name: "Roast beef",
     category: "Kebab",
     price: 17.5,
-    image: "/placeholder.svg?height=200&width=300"
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "5",
     name: "Tuna salad",
     category: "Popcorn",
     price: 35.0,
-    image: "/placeholder.svg?height=200&width=300"
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "6",
     name: "Salmon",
     category: "Burger",
     price: 48.0,
-    image: "/placeholder.svg?height=200&width=300"
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "7",
     name: "California roll",
     category: "Taco",
     price: 74.0,
-    image: "/placeholder.svg?height=200&width=300"
+    image: "/placeholder.svg?height=200&width=300",
   },
   {
     id: "8",
     name: "Sashimi",
     category: "Burrito",
     price: 74.0,
-    image: "/placeholder.svg?height=200&width=300"
-  }
+    image: "/placeholder.svg?height=200&width=300",
+  },
 ];
 
 export default function PosPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [orderItems, setOrderItems] = useState<OrderItem[]>([
-    { ...menuItems[3], quantity: 1, price: 12.0 },
-    { ...menuItems[4], quantity: 1, price: 14.0 },
-    { ...menuItems[5], quantity: 1, price: 45.0 },
-    { ...menuItems[6], quantity: 1, price: 22.0 },
-    {
-      id: "9",
-      name: "Duck carpaccio",
-      category: "Special",
-      price: 18.0,
-      image: "",
-      quantity: 1,
-    },
-  ]);
+  const [cartItems, setCartItems] = useState<ICart[]>([]);
+
   const [draftNumber, setDraftNumber] = useState(1);
 
   const { data: productData } = useProducts();
@@ -116,40 +108,60 @@ export default function PosPage() {
   const categories = (categoryData?.data as ICategory[]) ?? [];
   console.log("products", products);
 
-  const addToOrder = (item: MenuItem) => {
-    const existingItem = orderItems.find(
-      (orderItem) => orderItem.id === item.id,
-    );
-    if (existingItem) {
-      setOrderItems(
-        orderItems.map((orderItem) =>
-          orderItem.id === item.id
-            ? { ...orderItem, quantity: orderItem.quantity + 1 }
-            : orderItem,
-        ),
-      );
-    } else {
-      setOrderItems([...orderItems, { ...item, quantity: 1 }]);
+  const addToCart = (product: IProduct) => {
+    console.log("add to order clicked");
+    if (product.qty <= 0) {
+      toast.warning("Product out of stock");
+      return;
     }
+
+    setCartItems((prev) => {
+      const existingItem = prev.find((item) => item.id === product.id);
+
+      if (existingItem) {
+        if (existingItem.qty >= existingItem.stock) {
+          console.log("add to order clicked");
+          toast.warning("Product out of stock");
+          return prev;
+        }
+
+        return prev.map((item) =>
+          item.id === product.id ? { ...item, qty: item.qty + 1 } : item,
+        );
+      }
+
+      return [
+        ...prev,
+        {
+          id: product.id,
+          name: product.name,
+          category: product.category?.name || "Uncategorized",
+          price: Number(product.price),
+          imageUrl: product.productImages?.[0]?.imageUrl || "/placeholder.svg",
+          stock: product.qty,
+          qty: 1,
+        },
+      ];
+    });
   };
 
   const removeFromOrder = (id: string) => {
-    setOrderItems(orderItems.filter((item) => item.id !== id));
+    setCartItems(cartItems.filter((item) => item.id !== id));
   };
 
   const updateQuantity = (id: string, quantity: number) => {
     if (quantity === 0) {
       removeFromOrder(id);
     } else {
-      setOrderItems(
-        orderItems.map((item) =>
+      setCartItems(
+        cartItems.map((item) =>
           item.id === id ? { ...item, quantity } : item,
         ),
       );
     }
   };
 
-  const subtotal = orderItems.reduce(
+  const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
@@ -195,7 +207,7 @@ export default function PosPage() {
               <Card
                 key={item.id}
                 className="cursor-pointer transition-shadow hover:shadow-lg p-0"
-                // onClick={() => addToOrder(item)}
+                onClick={() => addToCart(item)}
               >
                 <CardContent className="p-0">
                   <div className="relative aspect-video overflow-hidden rounded-t-lg">
@@ -211,9 +223,16 @@ export default function PosPage() {
                       {/* {item?.category?.name} */}
                       {item?.category?.name}
                     </p>
-                    <p className="text-lg font-bold text-blue-600">
-                      ${item.price}
-                    </p>
+
+                    <div className="flex justify-between">
+                      <p className="text-lg font-bold text-blue-600">
+                        ${item.price}
+                      </p>
+
+                      <p className="text-sm font-bold text-gray-400">
+                        Stock: {item.qty}
+                      </p>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -238,22 +257,38 @@ export default function PosPage() {
 
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-3">
-            {orderItems.map((item, index) => (
+            {cartItems.map((item: ICart, index: number) => (
               <div
                 key={`${item.id}-${index}`}
                 className="flex items-center gap-3"
               >
                 <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-lg">
-                  <span className="text-lg">{index + 1}</span>
+                  <div className="">
+                    <img src={item.imageUrl} alt={item.name} />
+                  </div>
                 </div>
                 <div className="flex-1">
                   <h4 className="text-sm font-medium">{item.name}</h4>
                   <p className="text-muted-foreground text-xs">
-                    {item.description || "Lorem ipsum dolor sit"}
+                    {item.category}
                   </p>
+                  <p>${item.price}</p>
                 </div>
-                <div className="text-right">
-                  <p className="font-semibold">${item.price.toFixed(2)}</p>
+
+                <div className="flex flex-col items-end gap-2">
+                  <p className="font-semibold">${item.price * item.qty}</p>
+
+                  <div className="flex items-center gap-2">
+                    <Button className="">
+                      <MinusIcon />
+                    </Button>
+
+                    <span>{item.qty}</span>
+
+                    <Button className="">
+                      <PlusIcon />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
