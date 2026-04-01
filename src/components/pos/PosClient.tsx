@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -10,7 +10,7 @@ import { useCategoryList } from "@/hooks/useCategories";
 import type { ICategory } from "@/types/category";
 import type { IProduct } from "@/types/product";
 import type { ICart } from "@/types/cart";
-import { useCreateOrder } from "@/hooks/useOrder";
+import { useCreateOrder, useGeneratePdf } from "@/hooks/useOrder";
 import SharedDialog from "../SharedDialog";
 import { useCreatePayment } from "@/hooks/usePayment";
 
@@ -24,6 +24,10 @@ export default function PosClient() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+
+  const [createdOrderId, setCreatedOrderId] = useState<number | undefined>(
+    undefined,
+  );
 
   const { data: productData, isLoading: isProductLoading } = useProducts(
     search,
@@ -109,6 +113,19 @@ export default function PosClient() {
   const { mutate: createOrderMutate } = useCreateOrder();
   const { mutate: createPaymentMutate } = useCreatePayment();
 
+  const { data: generatedPdf } = useGeneratePdf(createdOrderId);
+
+  const pdfUrl = useMemo(() => {
+    if (!generatedPdf) return null;
+    return URL.createObjectURL(generatedPdf as Blob);
+  }, [generatedPdf]);
+
+  useEffect(() => {
+    return () => {
+      if (pdfUrl) URL.revokeObjectURL(pdfUrl);
+    };
+  }, [pdfUrl]);
+
   const handlePlaceOrder = () => {
     setIsLoading(true);
 
@@ -126,47 +143,53 @@ export default function PosClient() {
       onSuccess: (res) => {
         console.log("res", res);
         if (res.data && res.data?.id) {
-          const payload = {
-            method: "ABA_PAYWAY",
-          };
-          createPaymentMutate(
-            { orderId: Number(res.data.id), request: payload },
-            {
-              onSuccess: (res) => {
-                console.log("res", res.data);
-                if (res.data) {
-                  const payment = res.data?.payway;
-
-                  // Remove any previous form
-                  document.getElementById("aba_merchant_request")?.remove();
-
-                  const form = document.createElement("form");
-                  form.id = "aba_merchant_request";
-                  form.method = payment.method;
-                  form.action = payment.action;
-                  payment.view_type = "checkout";
-                  Object.entries(payment.fields).forEach(([key, value]) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = key;
-                    input.value = String(value);
-                    form.appendChild(input);
-                  });
-
-                  document.body.appendChild(form);
-
-              
-                  if(AbaPayway){
-                    AbaPayway?.checkout();
-                  }
-                }
-              },
-              onSettled: () => {
-                setIsLoading(false);
-              },
-            },
-          );
+          setCreatedOrderId(res.data.id);
         }
+        // if (res.data && res.data?.id) {
+        //   const payload = {
+        //     method: "ABA_PAYWAY",
+        //   };
+        //   createPaymentMutate(
+        //     { orderId: Number(res.data.id), request: payload },
+        //     {
+        //       onSuccess: (res) => {
+        //         console.log("res", res.data);
+        //         if (res.data) {
+        //           const payment = res.data?.payway;
+
+        //           // Remove any previous form
+        //           document.getElementById("aba_merchant_request")?.remove();
+
+        //           const form = document.createElement("form");
+        //           form.id = "aba_merchant_request";
+        //           form.method = payment.method;
+        //           form.action = payment.action;
+        //           form.target = payment.target;
+        //           Object.entries(payment.fields).forEach(([key, value]) => {
+        //             const input = document.createElement("input");
+        //             input.type = "hidden";
+        //             input.name = key;
+        //             input.value = String(value);
+        //             form.appendChild(input);
+        //           });
+
+        //           document.body.appendChild(form);
+
+        //           // const AbaPayway = (window as any).AbaPayway;
+        //           // if (!AbaPayway) {
+        //           //   console.error("AbaPayway SDK not loaded. Falling back to redirect.");
+        //           //   form.submit();
+        //           //   return;
+        //           // }
+        //           AbaPayway?.checkout();
+        //         }
+        //       },
+        //       onSettled: () => {
+        //         setIsLoading(false);
+        //       },
+        //     },
+        //   );
+        // }
       },
     });
   };
@@ -513,6 +536,31 @@ export default function PosClient() {
             {isLoading ? "Processing..." : `Confirm & Pay $${total.toFixed(2)}`}
           </Button>
         </div>
+      </SharedDialog>
+
+      <SharedDialog
+        open={!!pdfUrl}
+        setOpen={(open) => {
+          if (!open) {
+            setCreatedOrderId(0);
+            setOrderItems([]);
+          }
+        }}
+        title="Order Receipt"
+        width="80%"
+        height="90%"
+      >
+        {pdfUrl ? (
+          <iframe
+            src={pdfUrl}
+            className="h-full w-full rounded-lg border"
+            title="Order Receipt"
+          />
+        ) : (
+          <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
+            Generating receipt...
+          </div>
+        )}
       </SharedDialog>
     </div>
   );
