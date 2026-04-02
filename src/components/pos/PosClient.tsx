@@ -142,54 +142,54 @@ export default function PosClient() {
     createOrderMutate(orderData, {
       onSuccess: (res) => {
         console.log("res", res);
-        if (res.data && res.data?.id) {
-          setCreatedOrderId(res.data.id);
-        }
         // if (res.data && res.data?.id) {
-        //   const payload = {
-        //     method: "ABA_PAYWAY",
-        //   };
-        //   createPaymentMutate(
-        //     { orderId: Number(res.data.id), request: payload },
-        //     {
-        //       onSuccess: (res) => {
-        //         console.log("res", res.data);
-        //         if (res.data) {
-        //           const payment = res.data?.payway;
-
-        //           // Remove any previous form
-        //           document.getElementById("aba_merchant_request")?.remove();
-
-        //           const form = document.createElement("form");
-        //           form.id = "aba_merchant_request";
-        //           form.method = payment.method;
-        //           form.action = payment.action;
-        //           form.target = payment.target;
-        //           Object.entries(payment.fields).forEach(([key, value]) => {
-        //             const input = document.createElement("input");
-        //             input.type = "hidden";
-        //             input.name = key;
-        //             input.value = String(value);
-        //             form.appendChild(input);
-        //           });
-
-        //           document.body.appendChild(form);
-
-        //           // const AbaPayway = (window as any).AbaPayway;
-        //           // if (!AbaPayway) {
-        //           //   console.error("AbaPayway SDK not loaded. Falling back to redirect.");
-        //           //   form.submit();
-        //           //   return;
-        //           // }
-        //           AbaPayway?.checkout();
-        //         }
-        //       },
-        //       onSettled: () => {
-        //         setIsLoading(false);
-        //       },
-        //     },
-        //   );
+        //   setCreatedOrderId(res.data.id);
         // }
+        if (res.data && res.data?.id) {
+          const payload = {
+            method: "ABA_PAYWAY",
+          };
+          createPaymentMutate(
+            { orderId: Number(res.data.id), request: payload },
+            {
+              onSuccess: (res) => {
+                console.log("res", res.data);
+                if (res.data) {
+                  const payment = res.data?.payway;
+
+                  // Remove any previous form
+                  document.getElementById("aba_merchant_request")?.remove();
+
+                  const form = document.createElement("form");
+                  form.id = "aba_merchant_request";
+                  form.method = payment.method;
+                  form.action = payment.action;
+                  form.target = payment.target;
+                  Object.entries(payment.fields).forEach(([key, value]) => {
+                    const input = document.createElement("input");
+                    input.type = "hidden";
+                    input.name = key;
+                    input.value = String(value);
+                    form.appendChild(input);
+                  });
+
+                  document.body.appendChild(form);
+
+                  // const AbaPayway = (window as any).AbaPayway;
+                  // if (!AbaPayway) {
+                  //   console.error("AbaPayway SDK not loaded. Falling back to redirect.");
+                  //   form.submit();
+                  //   return;
+                  // }
+                  AbaPayway?.checkout();
+                }
+              },
+              onSettled: () => {
+                setIsLoading(false);
+              },
+            },
+          );
+        }
       },
     });
   };
