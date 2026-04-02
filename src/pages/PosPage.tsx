@@ -22,6 +22,7 @@ import { useCategories } from "@/hooks/useCategories";
 import type { ICategory } from "@/types/category";
 import { toast } from "sonner";
 import type { ICart } from "@/types/cart";
+import SharedDialog from "@/components/SharedDialog";
 
 interface MenuItem {
   id: string;
@@ -100,6 +101,7 @@ export default function PosPage() {
   const [cartItems, setCartItems] = useState<ICart[]>([]);
 
   const [draftNumber, setDraftNumber] = useState(1);
+  const [isOpen, setIsOpen] = useState(false);
 
   const { data: productData } = useProducts();
   const { data: categoryData } = useCategories();
@@ -145,7 +147,7 @@ export default function PosPage() {
     });
   };
 
-  const removeFromOrder = (id: string) => {
+  const removeFromCart = (id: number) => {
     setCartItems(cartItems.filter((item) => item.id !== id));
   };
 
@@ -162,191 +164,257 @@ export default function PosPage() {
   };
 
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (sum, item) => sum + item.price * item.qty,
     0,
   );
-  const tax = subtotal * 0.1;
-  const total = subtotal + tax;
+
+  const total = subtotal;
+
+  const updateQty = (id: number, qty: number) => {
+    if (qty === 0) {
+      removeFromCart(id);
+      return;
+    }
+
+    setCartItems(
+      cartItems.map((item) => (item.id === id ? { ...item, qty: qty } : item)),
+    );
+  };
 
   return (
-    <div className="flex h-screen">
-      {/* Main Content */}
-      <div className="flex flex-1 flex-col">
-        {/* Header */}
-        <div className="border-b p-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-semibold">Categories</h1>
-            <div className="flex items-center gap-2">
-              <ChevronLeft className="text-muted-foreground h-5 w-5" />
-              <ChevronRight className="text-muted-foreground h-5 w-5" />
+    <div>
+      <div className="flex h-screen">
+        {/* Main Content */}
+        <div className="flex flex-1 flex-col">
+          {/* Header */}
+          <div className="border-b p-4">
+            <div className="flex items-center justify-between">
+              <h1 className="text-xl font-semibold">Categories</h1>
+              <div className="flex items-center gap-2">
+                <ChevronLeft className="text-muted-foreground h-5 w-5" />
+                <ChevronRight className="text-muted-foreground h-5 w-5" />
+              </div>
+            </div>
+          </div>
+
+          {/* Categories */}
+          <div className="border-b p-4">
+            <div className="flex gap-4 overflow-x-auto">
+              {categories.map((category, index) => (
+                <div
+                  key={index}
+                  className="hover:bg-muted flex min-w-[80px] cursor-pointer flex-col items-center rounded-lg p-2 bg-orange-100"
+                  onClick={() => setSelectedCategory(category.name)}
+                >
+                  <span className=" text-center text-[18px]  px-2 py-1">
+                    {category.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Menu Items Grid */}
+          <div className="flex-1 overflow-auto p-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {products.map((item: IProduct) => (
+                <Card
+                  key={item.id}
+                  className="cursor-pointer transition-shadow hover:shadow-lg p-0"
+                  onClick={() => addToCart(item)}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative aspect-video overflow-hidden rounded-t-lg">
+                      <img
+                        src={
+                          item.productImages?.[0]?.imageUrl ?? "/no-image.png"
+                        }
+                        alt={item.name}
+                        className="object-fill w-full h-full"
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="mb-1 font-semibold">{item.name}</h3>
+                      <p className="text-muted-foreground mb-2 text-sm">
+                        {/* {item?.category?.name} */}
+                        {item?.category?.name}
+                      </p>
+
+                      <div className="flex justify-between">
+                        <p className="text-lg font-bold text-blue-600">
+                          ${item.price}
+                        </p>
+
+                        <p className="text-sm font-bold text-gray-400">
+                          Stock: {item.qty}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Categories */}
-        <div className="border-b p-4">
-          <div className="flex gap-4 overflow-x-auto">
-            {categories.map((category, index) => (
-              <div
-                key={index}
-                className="hover:bg-muted flex min-w-[80px] cursor-pointer flex-col items-center rounded-lg p-2 bg-orange-100"
-                onClick={() => setSelectedCategory(category.name)}
-              >
-                <span className=" text-center text-[18px]  px-2 py-1">
-                  {category.name}
-                </span>
+        {/* Right Sidebar - Order Summary */}
+        <div className="flex w-80 flex-col border-l">
+          <div className="border-b p-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold">
+                Draft #{draftNumber.toString().padStart(3, "0")}
+              </h2>
+              <div className="flex items-center gap-2">
+                <Plus className="text-muted-foreground h-4 w-4" />
+                <Trash2
+                  className=" h-4 w-4 text-red-500"
+                  onClick={() => setCartItems([])}
+                />
               </div>
-            ))}
+            </div>
           </div>
-        </div>
 
-        {/* Menu Items Grid */}
-        <div className="flex-1 overflow-auto p-6">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-            {products.map((item: IProduct) => (
-              <Card
-                key={item.id}
-                className="cursor-pointer transition-shadow hover:shadow-lg p-0"
-                onClick={() => addToCart(item)}
-              >
-                <CardContent className="p-0">
-                  <div className="relative aspect-video overflow-hidden rounded-t-lg">
-                    <img
-                      src={item.productImages?.[0]?.imageUrl ?? "/no-image.png"}
-                      alt={item.name}
-                      className="object-fill w-full h-full"
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="mb-1 font-semibold">{item.name}</h3>
-                    <p className="text-muted-foreground mb-2 text-sm">
-                      {/* {item?.category?.name} */}
-                      {item?.category?.name}
-                    </p>
-
-                    <div className="flex justify-between">
-                      <p className="text-lg font-bold text-blue-600">
-                        ${item.price}
-                      </p>
-
-                      <p className="text-sm font-bold text-gray-400">
-                        Stock: {item.qty}
-                      </p>
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-3">
+              {cartItems.map((item: ICart, index: number) => (
+                <div
+                  key={`${item.id}-${index}`}
+                  className="flex items-center gap-3"
+                >
+                  <div className="bg-muted flex h-12 items-center justify-center rounded-lg">
+                    <div className="">
+                      <img src={item.imageUrl} alt={item.name} />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium">{item.name}</h4>
+                    <p className="text-muted-foreground text-xs">
+                      {item.category}
+                    </p>
+                    <p>${item.price}</p>
+                  </div>
 
-      {/* Right Sidebar - Order Summary */}
-      <div className="flex w-80 flex-col border-l">
-        <div className="border-b p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="font-semibold">
-              Draft #{draftNumber.toString().padStart(3, "0")}
-            </h2>
-            <div className="flex items-center gap-2">
-              <Plus className="text-muted-foreground h-4 w-4" />
-              <Trash2 className="text-muted-foreground h-4 w-4" />
+                  <div className="flex flex-col items-end gap-2">
+                    <p className="font-semibold">${item.price * item.qty}</p>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        className=""
+                        type="button"
+                        onClick={() => updateQty(item.id, item.qty - 1)}
+                      >
+                        <MinusIcon />
+                      </Button>
+
+                      <span>{item.qty}</span>
+
+                      <Button
+                        className=""
+                        type="button"
+                        onClick={() => updateQty(item.id, item.qty + 1)}
+                      >
+                        <PlusIcon />
+                      </Button>
+
+                      <Button
+                        className="bg-red-500"
+                        type="button"
+                        onClick={() => removeFromCart(item.id)}
+                      >
+                        <TrashIcon />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-        </div>
+          </ScrollArea>
 
-        <ScrollArea className="flex-1 p-4">
-          <div className="space-y-3">
-            {cartItems.map((item: ICart, index: number) => (
-              <div
-                key={`${item.id}-${index}`}
-                className="flex items-center gap-3"
+          <div className="border-t p-4">
+            <div className="mb-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal</span>
+                <span>{subtotal.toFixed(2)}$</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between font-semibold">
+                <span>Total</span>
+                <span>{total.toFixed(2)}$</span>
+              </div>
+            </div>
+
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              <Button
+                variant="outline"
+                className="flex h-auto flex-col items-center bg-transparent p-4"
               >
-                <div className="bg-muted flex h-12 w-12 items-center justify-center rounded-lg">
-                  <div className="">
-                    <img src={item.imageUrl} alt={item.name} />
-                  </div>
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-green-100">
+                  <span className="font-semibold text-green-600">$</span>
                 </div>
-                <div className="flex-1">
-                  <h4 className="text-sm font-medium">{item.name}</h4>
-                  <p className="text-muted-foreground text-xs">
-                    {item.category}
-                  </p>
-                  <p>${item.price}</p>
+                <span className="text-xs">Cash</span>
+              </Button>
+
+              <Button
+                variant="outline"
+                className="flex h-auto flex-col items-center bg-transparent p-4"
+              >
+                <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
+                  <QrCode className="h-4 w-4 text-purple-600" />
                 </div>
-
-                <div className="flex flex-col items-end gap-2">
-                  <p className="font-semibold">${item.price * item.qty}</p>
-
-                  <div className="flex items-center gap-2">
-                    <Button className="">
-                      <MinusIcon />
-                    </Button>
-
-                    <span>{item.qty}</span>
-
-                    <Button className="">
-                      <PlusIcon />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-
-        <div className="border-t p-4">
-          <div className="mb-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Subtotal</span>
-              <span>{subtotal.toFixed(2)}$</span>
+                <span className="text-xs">Scan</span>
+              </Button>
             </div>
-            <div className="flex justify-between text-sm">
-              <span>Tax</span>
-              <span>{tax.toFixed(2)}$</span>
-            </div>
-            <Separator />
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span>{total.toFixed(2)}$</span>
-            </div>
-          </div>
 
-          <div className="mb-4 grid grid-cols-3 gap-2">
             <Button
-              variant="outline"
-              className="flex h-auto flex-col items-center bg-transparent p-4"
+              onClick={() => setIsOpen(true)}
+              className="w-full bg-blue-600 py-3 text-white hover:bg-blue-700"
             >
-              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-green-100">
-                <span className="font-semibold text-green-600">$</span>
-              </div>
-              <span className="text-xs">Cash</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex h-auto flex-col items-center bg-transparent p-4"
-            >
-              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
-                <CreditCard className="h-4 w-4 text-blue-600" />
-              </div>
-              <span className="text-xs">Debit</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="flex h-auto flex-col items-center bg-transparent p-4"
-            >
-              <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-purple-100">
-                <QrCode className="h-4 w-4 text-purple-600" />
-              </div>
-              <span className="text-xs">Scan</span>
+              Checkout ${total.toFixed(2)}
             </Button>
           </div>
-
-          <Button className="w-full bg-blue-600 py-3 text-white hover:bg-blue-700">
-            Checkout ${total.toFixed(2)}
-          </Button>
         </div>
       </div>
+
+      <SharedDialog
+        open={isOpen}
+        setOpen={setIsOpen}
+        isCancel={false}
+        title="Order summary"
+        desc="Please check the summary detail"
+      >
+        <div className="space-y-10">
+          {cartItems.map((item: ICart, index: number) => (
+            <div
+              key={`${item.id}-${index}`}
+              className="flex items-center gap-6"
+            >
+              <div className="bg-muted flex w-[100px] h-12 items-center justify-center rounded-lg">
+                <div className="">
+                  <img src={item.imageUrl} alt={item.name} />
+                </div>
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-medium">{item.name}</h4>
+                <p className="text-muted-foreground text-xs">{item.category}</p>
+                <div className="flex gap-4">
+                  <p className="text-primary">${item.price}</p>
+                  <p>X {item.qty}</p>
+                </div>
+              </div>
+
+              <div className="flex flex-col items-end gap-2">
+                <p className="font-semibold">${item.price * item.qty}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex justify-end">
+          <p className="text-xl">Total: $ {total.toFixed(2)}</p>
+        </div>
+
+        <Button className="w-full mt-8">Place Order</Button>
+      </SharedDialog>
     </div>
   );
 }
