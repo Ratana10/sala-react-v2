@@ -204,12 +204,7 @@ export default function PosClient() {
 
                   document.body.appendChild(form);
 
-                  // const AbaPayway = (window as any).AbaPayway;
-                  // if (!AbaPayway) {
-                  //   console.error("AbaPayway SDK not loaded. Falling back to redirect.");
-                  //   form.submit();
-                  //   return;
-                  // }
+                  setIsCheckoutOpen(false);
                   AbaPayway?.checkout();
                 }
               },
