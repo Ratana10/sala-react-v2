@@ -1,5 +1,6 @@
 import {
   createPayment,
+  createPaymentQr,
   type IPaymentPayload,
 } from "@/services/payment.service";
 
@@ -25,6 +26,29 @@ export const useCreatePayment = () => {
     onError: (error: Error) => {
       toast.error("Failed to create payment");
       console.log("Failed to create payment", error);
+    },
+  });
+};
+
+export const useCreatePaymentQr = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      request,
+    }: {
+      orderId: number;
+      request: IPaymentPayload;
+    }) => createPaymentQr(orderId, request),
+
+    onSuccess: () => {
+      toast.success("Payment QR created successfully");
+      queryClient.invalidateQueries({ queryKey: ["payment"] });
+    },
+    onError: (error: Error) => {
+      toast.error("Failed to create payment QR");
+      console.log("Failed to create payment QR", error);
     },
   });
 };

@@ -12,7 +12,7 @@ import type { IProduct } from "@/types/product";
 import type { ICart } from "@/types/cart";
 import { useCreateOrder, useGeneratePdf } from "@/hooks/useOrder";
 import SharedDialog from "../SharedDialog";
-import { useCreatePayment } from "@/hooks/usePayment";
+import { useCreatePayment, useCreatePaymentQr } from "@/hooks/usePayment";
 
 export default function PosClient() {
   const [search, setSearch] = useState("");
@@ -21,6 +21,13 @@ export default function PosClient() {
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [draftNumber] = useState(1);
   const [orderItems, setOrderItems] = useState<ICart[]>([]);
+
+  const [qrData, setQrData] = useState<{
+    qrImage: string;
+    amount: number;
+    currency: string;
+    paywayTranId: string;
+  } | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
@@ -112,6 +119,7 @@ export default function PosClient() {
 
   const { mutate: createOrderMutate } = useCreateOrder();
   const { mutate: createPaymentMutate } = useCreatePayment();
+  const { mutate: createPaymentQrMutate } = useCreatePaymentQr();
 
   const { data: generatedPdf } = useGeneratePdf(createdOrderId);
 
@@ -147,41 +155,21 @@ export default function PosClient() {
         // }
         if (res.data && res.data?.id) {
           const payload = {
-            method: "ABA_PAYWAY",
+            method: "ABA_PAYWAY_QR",
           };
-          createPaymentMutate(
+          createPaymentQrMutate(
             { orderId: Number(res.data.id), request: payload },
             {
               onSuccess: (res) => {
-                console.log("res", res.data);
                 if (res.data) {
-                  const payment = res.data?.payway;
-
-                  // Remove any previous form
-                  document.getElementById("aba_merchant_request")?.remove();
-
-                  const form = document.createElement("form");
-                  form.id = "aba_merchant_request";
-                  form.method = payment.method;
-                  form.action = payment.action;
-                  form.target = payment.target;
-                  Object.entries(payment.fields).forEach(([key, value]) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = key;
-                    input.value = String(value);
-                    form.appendChild(input);
+                  const { qr, payment } = res.data;
+                  setQrData({
+                    qrImage: qr.qrImage,
+                    amount: qr.amount,
+                    currency: qr.currency,
+                    paywayTranId: payment.paywayTranId,
                   });
-
-                  document.body.appendChild(form);
-
-                  // const AbaPayway = (window as any).AbaPayway;
-                  // if (!AbaPayway) {
-                  //   console.error("AbaPayway SDK not loaded. Falling back to redirect.");
-                  //   form.submit();
-                  //   return;
-                  // }
-                  AbaPayway?.checkout();
+                  setIsCheckoutOpen(false); // close checkout dialog
                 }
               },
               onSettled: () => {
@@ -189,6 +177,47 @@ export default function PosClient() {
               },
             },
           );
+
+          // createPaymentMutate(
+          //   { orderId: Number(res.data.id), request: payload },
+          //   {
+          //     onSuccess: (res) => {
+          //       console.log("res", res.data);
+          //       if (res.data) {
+          //         const payment = res.data?.payway;
+
+          //         // Remove any previous form
+          //         document.getElementById("aba_merchant_request")?.remove();
+
+          //         const form = document.createElement("form");
+          //         form.id = "aba_merchant_request";
+          //         form.method = payment.method;
+          //         form.action = payment.action;
+          //         form.target = payment.target;
+          //         Object.entries(payment.fields).forEach(([key, value]) => {
+          //           const input = document.createElement("input");
+          //           input.type = "hidden";
+          //           input.name = key;
+          //           input.value = String(value);
+          //           form.appendChild(input);
+          //         });
+
+          //         document.body.appendChild(form);
+
+          //         // const AbaPayway = (window as any).AbaPayway;
+          //         // if (!AbaPayway) {
+          //         //   console.error("AbaPayway SDK not loaded. Falling back to redirect.");
+          //         //   form.submit();
+          //         //   return;
+          //         // }
+          //         AbaPayway?.checkout();
+          //       }
+          //     },
+          //     onSettled: () => {
+          //       setIsLoading(false);
+          //     },
+          //   },
+          // );
         }
       },
     });
@@ -559,6 +588,28 @@ export default function PosClient() {
         ) : (
           <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
             Generating receipt...
+          </div>
+        )}
+      </SharedDialog>
+
+      <SharedDialog
+        open={!!qrData}
+        setOpen={(open) => {
+          if (!open) setQrData(null);
+        }}
+        title="Scan to Pay"
+        height="80%"
+      >
+        {qrData && (
+          <div className="flex flex-col items-center gap-4 py-4">
+            <img
+              src={qrData.qrImage}
+              alt="QR Code"
+              className="h-full w-[60%] rounded-lg border shadow"
+            />
+            <p className="text-muted-foreground text-sm">
+              Scan with ABA Mobile Bank to complete payment
+            </p>
           </div>
         )}
       </SharedDialog>
