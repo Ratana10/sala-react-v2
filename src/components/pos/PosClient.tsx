@@ -155,57 +155,21 @@ export default function PosClient() {
         // }
         if (res.data && res.data?.id) {
           const payload = {
-            method: "ABA_PAYWAY",
+            method: "ABA_PAYWAY_QR",
           };
-          // createPaymentQrMutate(
-          //   { orderId: Number(res.data.id), request: payload },
-          //   {
-          //     onSuccess: (res) => {
-          //       if (res.data) {
-          //         const { qr, payment } = res.data;
-          //         setQrData({
-          //           qrImage: qr.qrImage,
-          //           amount: qr.amount,
-          //           currency: qr.currency,
-          //           paywayTranId: payment.paywayTranId,
-          //         });
-          //         setIsCheckoutOpen(false); // close checkout dialog
-          //       }
-          //     },
-          //     onSettled: () => {
-          //       setIsLoading(false);
-          //     },
-          //   },
-          // );
-
-          createPaymentMutate(
+          createPaymentQrMutate(
             { orderId: Number(res.data.id), request: payload },
             {
               onSuccess: (res) => {
-                console.log("res", res.data);
                 if (res.data) {
-                  const payment = res.data?.payway;
-
-                  // Remove any previous form
-                  document.getElementById("aba_merchant_request")?.remove();
-
-                  const form = document.createElement("form");
-                  form.id = "aba_merchant_request";
-                  form.method = payment.method;
-                  form.action = payment.action;
-                  form.target = payment.target;
-                  Object.entries(payment.fields).forEach(([key, value]) => {
-                    const input = document.createElement("input");
-                    input.type = "hidden";
-                    input.name = key;
-                    input.value = String(value);
-                    form.appendChild(input);
+                  const { qr, payment } = res.data;
+                  setQrData({
+                    qrImage: qr.qrImage,
+                    amount: qr.amount,
+                    currency: qr.currency,
+                    paywayTranId: payment.paywayTranId,
                   });
-
-                  document.body.appendChild(form);
-
-                  setIsCheckoutOpen(false);
-                  AbaPayway?.checkout();
+                  setIsCheckoutOpen(false); // close checkout dialog
                 }
               },
               onSettled: () => {
@@ -213,6 +177,42 @@ export default function PosClient() {
               },
             },
           );
+
+          // createPaymentMutate(
+          //   { orderId: Number(res.data.id), request: payload },
+          //   {
+          //     onSuccess: (res) => {
+          //       console.log("res", res.data);
+          //       if (res.data) {
+          //         const payment = res.data?.payway;
+
+          //         // Remove any previous form
+          //         document.getElementById("aba_merchant_request")?.remove();
+
+          //         const form = document.createElement("form");
+          //         form.id = "aba_merchant_request";
+          //         form.method = payment.method;
+          //         form.action = payment.action;
+          //         form.target = payment.target;
+          //         Object.entries(payment.fields).forEach(([key, value]) => {
+          //           const input = document.createElement("input");
+          //           input.type = "hidden";
+          //           input.name = key;
+          //           input.value = String(value);
+          //           form.appendChild(input);
+          //         });
+
+          //         document.body.appendChild(form);
+
+          //         setIsCheckoutOpen(false);
+          //         AbaPayway?.checkout();
+          //       }
+          //     },
+          //     onSettled: () => {
+          //       setIsLoading(false);
+          //     },
+          //   },
+          // );
         }
       },
     });
