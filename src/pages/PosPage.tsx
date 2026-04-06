@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -23,6 +23,8 @@ import type { ICategory } from "@/types/category";
 import { toast } from "sonner";
 import type { ICart } from "@/types/cart";
 import SharedDialog from "@/components/SharedDialog";
+import { useCreateOrder } from "@/hooks/useOrder";
+import type { OrderPayload } from "@/services/order.service";
 
 interface MenuItem {
   id: string;
@@ -106,6 +108,19 @@ export default function PosPage() {
   const { data: productData } = useProducts();
   const { data: categoryData } = useCategories();
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isSuccess) return;
+
+    const timer = setTimeout(() => {
+      setIsSuccess(false);
+    }, 10000); // 10 sec
+
+    return () => clearTimeout(timer);
+  }, [isSuccess]);
+
   const products = (productData?.data as IProduct[]) ?? [];
   const categories = (categoryData?.data as ICategory[]) ?? [];
   console.log("products", products);
@@ -179,6 +194,31 @@ export default function PosPage() {
     setCartItems(
       cartItems.map((item) => (item.id === id ? { ...item, qty: qty } : item)),
     );
+  };
+
+  const { mutate: createOrderMutate } = useCreateOrder();
+
+  const handlePlaceOrder = () => {
+    setIsLoading(true);
+
+    const payload: OrderPayload = {
+      discount: 0,
+      items: cartItems.map((item) => ({
+        productId: item.id,
+        qty: item.qty,
+      })),
+    };
+
+    createOrderMutate(payload, {
+      onSuccess: () => {
+        setCartItems([]);
+        setIsOpen(false);
+        setIsSuccess(true);
+      },
+      onSettled: () => {
+        setIsLoading(false);
+      },
+    });
   };
 
   return (
@@ -413,7 +453,30 @@ export default function PosPage() {
           <p className="text-xl">Total: $ {total.toFixed(2)}</p>
         </div>
 
-        <Button className="w-full mt-8">Place Order</Button>
+        <Button
+          onClick={handlePlaceOrder}
+          type="button"
+          className="w-full mt-8"
+        >
+          Place Order
+        </Button>
+      </SharedDialog>
+
+      <SharedDialog
+        open={isSuccess}
+        setOpen={setIsSuccess}
+        isCancel={false}
+        title="Order Success"
+        width="35%"
+      >
+        <div className="flex flex-col items-center justify-center">
+          <img
+            className="w-[150px] h-[150px]"
+            src="/tick-icon.png"
+            alt="tick icon"
+          />
+          <p className="text-xl mt-8">Order created successfully</p>
+        </div>
       </SharedDialog>
     </div>
   );
