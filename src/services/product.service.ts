@@ -5,12 +5,14 @@ export const fetchProduct = async (
   search?: string,
   page: number = 1,
   limit: number = 10,
+  categoryId?: number,
 ) => {
   return await api.get(`/api/v1/products`, {
     params: {
       search,
       page,
       limit,
+      categoryId,
     },
   });
 };

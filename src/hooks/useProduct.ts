@@ -8,10 +8,10 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-export const useProducts = (search?: string, page?: number, limit?: number) => {
+export const useProducts = (search?: string, page?: number, limit?: number, categoryId?: number) => {
   return useQuery({
-    queryKey: ["products", search, page, limit],
-    queryFn: () => fetchProduct(search, page, limit),
+    queryKey: ["products", search, page, limit, categoryId],
+    queryFn: () => fetchProduct(search, page, limit, categoryId),
   });
 };
 

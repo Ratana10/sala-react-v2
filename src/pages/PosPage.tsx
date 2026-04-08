@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Plus,
   Trash2,
-  CreditCard,
   QrCode,
   TrashIcon,
   MinusIcon,
@@ -25,87 +24,24 @@ import type { ICart } from "@/types/cart";
 import SharedDialog from "@/components/SharedDialog";
 import { useCreateOrder } from "@/hooks/useOrder";
 import type { OrderPayload } from "@/services/order.service";
-
-interface MenuItem {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  image: string;
-  description?: string;
-}
-
-interface OrderItem extends MenuItem {
-  quantity: number;
-}
-
-const menuItems: MenuItem[] = [
-  {
-    id: "1",
-    name: "Duck Salad",
-    category: "Pizza",
-    price: 35.0,
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "2",
-    name: "Breakfast board",
-    category: "Taco",
-    price: 14.0,
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "3",
-    name: "Hummus",
-    category: "Sandwich",
-    price: 24.0,
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "4",
-    name: "Roast beef",
-    category: "Kebab",
-    price: 17.5,
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "5",
-    name: "Tuna salad",
-    category: "Popcorn",
-    price: 35.0,
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "6",
-    name: "Salmon",
-    category: "Burger",
-    price: 48.0,
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "7",
-    name: "California roll",
-    category: "Taco",
-    price: 74.0,
-    image: "/placeholder.svg?height=200&width=300",
-  },
-  {
-    id: "8",
-    name: "Sashimi",
-    category: "Burrito",
-    price: 74.0,
-    image: "/placeholder.svg?height=200&width=300",
-  },
-];
+import { Input } from "@/components/ui/input";
+import  { Loading } from "@/components/Loading";
 
 export default function PosPage() {
-  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [searchText, setSearchText] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<number | undefined>(
+    undefined,
+  );
   const [cartItems, setCartItems] = useState<ICart[]>([]);
 
-  const [draftNumber, setDraftNumber] = useState(1);
   const [isOpen, setIsOpen] = useState(false);
 
-  const { data: productData } = useProducts();
+  const { data: productData } = useProducts(
+    searchText,
+    1,
+    10,
+    selectedCategory,
+  );
   const { data: categoryData } = useCategories();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -121,8 +57,23 @@ export default function PosPage() {
     return () => clearTimeout(timer);
   }, [isSuccess]);
 
+  useEffect(() => {
+    const timer = setTimeout(() => {}, 5000); // delay 5 sec
+
+    return () => clearTimeout(timer);
+  }, [searchText]);
+
   const products = (productData?.data as IProduct[]) ?? [];
   const categories = (categoryData?.data as ICategory[]) ?? [];
+
+  const allCategories = [
+    {
+      id: undefined,
+      name: "All",
+    },
+    ...categories,
+  ];
+
   console.log("products", products);
 
   const addToCart = (product: IProduct) => {
@@ -166,18 +117,6 @@ export default function PosPage() {
     setCartItems(cartItems.filter((item) => item.id !== id));
   };
 
-  const updateQuantity = (id: string, quantity: number) => {
-    if (quantity === 0) {
-      removeFromOrder(id);
-    } else {
-      setCartItems(
-        cartItems.map((item) =>
-          item.id === id ? { ...item, quantity } : item,
-        ),
-      );
-    }
-  };
-
   const subtotal = cartItems.reduce(
     (sum, item) => sum + item.price * item.qty,
     0,
@@ -186,14 +125,19 @@ export default function PosPage() {
   const total = subtotal;
 
   const updateQty = (id: number, qty: number) => {
-    if (qty === 0) {
-      removeFromCart(id);
-      return;
-    }
+    setCartItems((prev) => {
+      return prev
+        .map((item) => {
+          if (item.id !== id) return item;
 
-    setCartItems(
-      cartItems.map((item) => (item.id === id ? { ...item, qty: qty } : item)),
-    );
+          const newQty = Math.min(qty, item.stock);
+
+          if (newQty === 0) return null;
+
+          return { ...item, qty: newQty };
+        })
+        .filter(Boolean) as ICart[];
+    });
   };
 
   const { mutate: createOrderMutate } = useCreateOrder();
@@ -221,6 +165,10 @@ export default function PosPage() {
     });
   };
 
+  if (isLoading) {
+    return <Loading />;
+  }
+
   return (
     <div>
       <div className="flex h-screen">
@@ -240,11 +188,11 @@ export default function PosPage() {
           {/* Categories */}
           <div className="border-b p-4">
             <div className="flex gap-4 overflow-x-auto">
-              {categories.map((category, index) => (
+              {allCategories.map((category, index) => (
                 <div
                   key={index}
                   className="hover:bg-muted flex min-w-[80px] cursor-pointer flex-col items-center rounded-lg p-2 bg-orange-100"
-                  onClick={() => setSelectedCategory(category.name)}
+                  onClick={() => setSelectedCategory(category.id)}
                 >
                   <span className=" text-center text-[18px]  px-2 py-1">
                     {category.name}
@@ -256,6 +204,13 @@ export default function PosPage() {
 
           {/* Menu Items Grid */}
           <div className="flex-1 overflow-auto p-6">
+            <Input
+              placeholder="Search product name..."
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              className="w-[500px] mb-4"
+            />
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
               {products.map((item: IProduct) => (
                 <Card
@@ -301,9 +256,7 @@ export default function PosPage() {
         <div className="flex w-80 flex-col border-l">
           <div className="border-b p-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold">
-                Draft #{draftNumber.toString().padStart(3, "0")}
-              </h2>
+              <h2 className="font-semibold">Cart</h2>
               <div className="flex items-center gap-2">
                 <Plus className="text-muted-foreground h-4 w-4" />
                 <Trash2
