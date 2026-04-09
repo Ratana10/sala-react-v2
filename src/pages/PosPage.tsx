@@ -25,7 +25,8 @@ import SharedDialog from "@/components/SharedDialog";
 import { useCreateOrder } from "@/hooks/useOrder";
 import type { OrderPayload } from "@/services/order.service";
 import { Input } from "@/components/ui/input";
-import  { Loading } from "@/components/Loading";
+import { Loading } from "@/components/Loading";
+import { useCreatePayment } from "@/hooks/usePayment";
 
 export default function PosPage() {
   const [searchText, setSearchText] = useState<string>("");
@@ -141,6 +142,7 @@ export default function PosPage() {
   };
 
   const { mutate: createOrderMutate } = useCreateOrder();
+  const { mutate: createPaymentMutate } = useCreatePayment();
 
   const handlePlaceOrder = () => {
     setIsLoading(true);
@@ -154,10 +156,37 @@ export default function PosPage() {
     };
 
     createOrderMutate(payload, {
-      onSuccess: () => {
-        setCartItems([]);
-        setIsOpen(false);
-        setIsSuccess(true);
+      onSuccess: (res) => {
+        console.log("Res", res);
+        const orderId = res.data.id;
+        createPaymentMutate(orderId, {
+          onSuccess: (res) => {
+            if (res.data) {
+              const payway = res.data.payway;
+
+              const form = document.createElement("form");
+              form.id = "aba_merchant_request";
+              form.method = payway.method;
+              form.action = payway.action;
+              form.target = payway.target;
+              Object.entries(payway.fields).forEach(([key, value]) => {
+                const input = document.createElement("input");
+                input.type = "hidden";
+                input.name = key;
+                input.value = String(value);
+                form.appendChild(input);
+              });
+
+              document.body.appendChild(form);
+
+              setIsOpen(false);
+              AbaPayway?.checkout();
+            }
+          },
+        });
+        // setCartItems([]);
+        // setIsOpen(false);
+        // setIsSuccess(true);
       },
       onSettled: () => {
         setIsLoading(false);
