@@ -26,9 +26,12 @@ import { useCreateOrder } from "@/hooks/useOrder";
 import type { OrderPayload } from "@/services/order.service";
 import { Input } from "@/components/ui/input";
 import { Loading } from "@/components/Loading";
-import { useCreatePayment } from "@/hooks/usePayment";
+import { useCheckTransaction, useCreatePayment } from "@/hooks/usePayment";
+import { useSearchParams } from "react-router-dom";
 
 export default function PosPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+
   const [searchText, setSearchText] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<number | undefined>(
     undefined,
@@ -44,6 +47,7 @@ export default function PosPage() {
     selectedCategory,
   );
   const { data: categoryData } = useCategories();
+  const { mutate: checkTransactionMutate } = useCheckTransaction();
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -63,6 +67,21 @@ export default function PosPage() {
 
     return () => clearTimeout(timer);
   }, [searchText]);
+
+  useEffect(() => {
+    const paywayTranId = searchParams.get("paywayTranId");
+
+    if (paywayTranId) {
+      checkTransactionMutate(paywayTranId, {
+        onSuccess: ()=> {
+            setSearchParams({});
+        },
+        onSettled: () => {
+          setIsLoading(false);
+        },
+      });
+    }
+  }, [searchParams]);
 
   const products = (productData?.data as IProduct[]) ?? [];
   const categories = (categoryData?.data as ICategory[]) ?? [];
